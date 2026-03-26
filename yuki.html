@@ -905,7 +905,7 @@ async function gerarFichaDeResumo(hist, prof) {
       ]})
     });
     const data = await res.json();
-    const resumo = data?.choices?.[0]?.message?.content;
+    const resumo = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!resumo) return;
     const fichas = loadFichas();
     fichas.push({ id: Date.now(), data: new Date().toLocaleDateString('pt-BR'), resumo });

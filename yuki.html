@@ -1264,7 +1264,7 @@ async function send(text) {
       body: JSON.stringify({ messages:[{role:'system',content:buildSysPrompt(currentProfile)}, ...history] })
     });
     const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content || data?.error?.message || 'Erro na resposta.';
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.error?.message || 'Erro na resposta.';
     history.push({role:'assistant', content:reply});
     saveHistory(history);
     msgCountSinceLastFicha++;

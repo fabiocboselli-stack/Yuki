@@ -2,820 +2,340 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000508">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Yuki</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
+:root{
+  --blue:#00aaff;--blue2:#00ccff;--dim:#3a6a8a;--bg:#000508;
+  --text:#a0d4f0;--glow:rgba(0,170,255,0.7);
 }
+body{font-family:'Share Tech Mono',monospace;background:var(--bg);color:var(--text);height:100vh;width:100vw;overflow:hidden}
 
-:root {
-  --blue: #00aaff;
-  --blue-dim: #0066aa;
-  --blue-dark: #001a2e;
-  --glow: rgba(0,170,255,0.6);
-  --bg: #020810;
-  --text: #a0d4f0;
-  --text-dim: #3a6a8a;
-  --scanline: rgba(0,170,255,0.03);
-}
+/* CANVAS */
+#qcanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 
-body {
-  font-family: 'Share Tech Mono', monospace;
-  background: var(--bg);
-  color: var(--text);
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
+/* SCANLINE */
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.12),transparent);animation:scan 5s linear infinite;pointer-events:none;z-index:2}
+@keyframes scan{from{top:0}to{top:100vh}}
 
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px,
-    var(--scanline) 2px, var(--scanline) 4px
-  );
-  pointer-events: none;
-  z-index: 1000;
-}
-
-.bg-grid {
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(0,170,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,170,255,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: gridScroll 20s linear infinite;
-}
-@keyframes gridScroll {
-  from { background-position: 0 0; }
-  to   { background-position: 0 40px; }
-}
-
-.bg-vignette {
-  position: fixed; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, #020810 100%);
-  pointer-events: none;
-}
-
-/* ── LAYOUT ── */
-.screen {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.top-bar {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  padding: 14px 28px;
-  border-bottom: 1px solid rgba(0,170,255,0.15);
-  flex-shrink: 0;
-}
-
-.logo {
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 900; font-size: 1.4rem;
-  color: var(--blue); letter-spacing: 0.4em;
-  text-shadow: 0 0 20px var(--glow), 0 0 40px rgba(0,170,255,0.3);
-}
-.logo::after {
-  content: '  雪';
-  font-family: serif; font-size: 0.7rem;
-  color: var(--blue-dim); letter-spacing: 0;
-}
-
-.status-dots { display: flex; gap: 8px; align-items: center; }
-.dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--blue); box-shadow: 0 0 8px var(--glow);
-  animation: dotPulse 2s ease-in-out infinite;
-}
-.dot:nth-child(2) { animation-delay:.3s; background:#00ff88; box-shadow:0 0 8px rgba(0,255,136,.6); }
-.dot:nth-child(3) { animation-delay:.6s; background:#ffaa00; box-shadow:0 0 8px rgba(255,170,0,.6); }
-@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-.sys-label { font-size:.6rem; color:var(--text-dim); letter-spacing:.25em; }
-
-.main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* ── CHAT ── */
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px 28px;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding-right: 8px;
-  min-height: 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--blue-dim) transparent;
-}
-.chat-messages::-webkit-scrollbar { width:2px; }
-.chat-messages::-webkit-scrollbar-thumb { background:var(--blue-dim); }
-
-.msg { display:flex; flex-direction:column; gap:4px; max-width:85%; animation:msgIn .3s ease-out; }
-@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
-
-.msg-label { font-size:.55rem; letter-spacing:.3em; color:var(--text-dim); }
-.msg-yuki .msg-label { color:var(--blue); }
-
-.msg-bubble {
-  padding:10px 16px; font-size:.82rem;
-  line-height:1.7; letter-spacing:.03em;
-}
-.msg-yuki .msg-bubble {
-  background:rgba(0,170,255,.05);
-  border-left:2px solid var(--blue); color:#c8e8f8;
-}
-.msg-user { align-self:flex-end; text-align:right; }
-.msg-user .msg-label { text-align:right; }
-.msg-user .msg-bubble {
-  background:rgba(255,255,255,.03);
-  border-left:2px solid var(--text-dim); color:var(--text-dim);
-}
-
-.thinking { display:none; gap:6px; align-items:center; padding:8px 0; opacity:.5; }
-.thinking.on { display:flex; }
-.thinking span { font-size:.6rem; letter-spacing:.2em; color:var(--blue); animation:thinkBlink 1.2s ease-in-out infinite; }
-.thinking span:nth-child(2){animation-delay:.2s}
-.thinking span:nth-child(3){animation-delay:.4s}
-@keyframes thinkBlink { 0%,100%{opacity:.2} 50%{opacity:1} }
-
-.input-row {
-  display:flex; align-items:center; gap:10px;
-  margin-top:16px; padding-top:16px;
-  border-top:1px solid rgba(0,170,255,.1);
-}
-.prompt-symbol { color:var(--blue); font-size:.9rem; flex-shrink:0; text-shadow:0 0 8px var(--glow); }
-.chat-input {
-  flex:1; background:transparent; border:none; outline:none;
-  color:var(--text); font-family:'Share Tech Mono',monospace;
-  font-size:.82rem; letter-spacing:.05em; caret-color:var(--blue);
-}
-.chat-input::placeholder { color:var(--text-dim); opacity:.5; }
-
-.btn {
-  background:transparent; border:1px solid rgba(0,170,255,.3);
-  color:var(--blue); font-family:'Share Tech Mono',monospace;
-  font-size:.6rem; letter-spacing:.2em; padding:6px 12px;
-  cursor:pointer; transition:all .2s; flex-shrink:0;
-}
-.btn:hover { background:rgba(0,170,255,.1); border-color:var(--blue); box-shadow:0 0 12px rgba(0,170,255,.2); }
-.btn.mic-on { background:rgba(0,170,255,.15); border-color:var(--blue); animation:micGlow 1s ease-in-out infinite; }
-@keyframes micGlow { 0%,100%{box-shadow:0 0 8px rgba(0,170,255,.3)} 50%{box-shadow:0 0 20px rgba(0,170,255,.6)} }
-
-/* ── RIGHT INFO — sem caixa ── */
-.info-panel {
-  width:200px; flex-shrink:0;
-  display:flex; flex-direction:column;
-  justify-content:center; gap:28px;
-  padding:20px 28px 20px 0;
-  border-left:1px solid rgba(0,170,255,.08);
-}
-
-.info-block { display:flex; flex-direction:column; gap:3px; }
-
-.info-label { font-size:.5rem; letter-spacing:.35em; color:var(--text-dim); text-transform:uppercase; }
-
-.info-value {
-  font-family:'Orbitron',sans-serif; font-weight:700;
-  font-size:1.6rem; color:var(--blue);
-  text-shadow:0 0 15px var(--glow); line-height:1;
-}
-
-.info-sub { font-size:.6rem; color:var(--text-dim); letter-spacing:.15em; margin-top:2px; }
-
-.info-line {
-  width:30px; height:1px;
-  background:linear-gradient(90deg,var(--blue),transparent);
-  margin-top:5px;
-}
-
-.temp-hot  { color:#ff6633 !important; text-shadow:0 0 15px rgba(255,100,50,.6) !important; }
-.temp-warm { color:#ffaa00 !important; text-shadow:0 0 15px rgba(255,170,0,.6) !important; }
-
-/* ── KITT ── */
-.kitt-section {
-  flex-shrink:0; padding:0 28px 18px;
-  display:flex; flex-direction:column; gap:5px;
-}
-.kitt-label { font-size:.5rem; letter-spacing:.4em; color:var(--text-dim); margin-bottom:3px; }
-
-.kitt-row { display:flex; align-items:center; gap:2px; height:14px; }
-
-.kitt-bar { flex:1; height:100%; display:flex; gap:2px; align-items:center; }
-
-.kitt-seg {
-  flex:1; height:100%;
-  background: rgba(0,100,180,0.35);
-  border:none;
-  transition:background .05s, box-shadow .05s;
-}
-.kitt-seg.on {
-  background:var(--blue);
-  box-shadow:0 0 10px var(--glow), 0 0 20px rgba(0,170,255,.4);
-}
-.kitt-seg.on.peak {
-  background:#aaeeff;
-  box-shadow:0 0 14px #aaeeff, 0 0 28px var(--glow);
-}
-
-.kitt-row.cascade {
-  opacity:0; transform:scaleY(.3);
-  transition:opacity .2s, transform .2s;
-}
-.kitt-row.cascade.visible { opacity:.55; transform:scaleY(1); }
-.kitt-row.cascade.visible + .cascade.visible { opacity:.3; }
-.kitt-row.cascade.visible + .cascade.visible + .cascade.visible { opacity:.12; }
-
-/* ── BOOT ── */
-.boot-overlay {
-  position:fixed; inset:0; background:var(--bg);
-  z-index:500; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:8px;
-  transition:opacity .8s;
-}
-.boot-overlay.fade { opacity:0; pointer-events:none; }
-
-.boot-logo {
-  font-family:'Orbitron',sans-serif; font-size:3rem; font-weight:900;
-  color:var(--blue); letter-spacing:.5em;
-  animation:bootGlow .5s ease-in-out infinite alternate;
-}
-@keyframes bootGlow {
-  from { text-shadow:0 0 20px var(--glow); }
-  to   { text-shadow:0 0 60px var(--glow),0 0 100px rgba(0,170,255,.4); }
-}
-
-.boot-line {
-  font-size:.6rem; letter-spacing:.2em; color:var(--text-dim);
-  animation:bootType .4s steps(1) forwards; opacity:0;
-}
+/* BOOT */
+.boot{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:opacity .8s}
+.boot.fade{opacity:0;pointer-events:none}
+.boot-logo{font-family:'Orbitron',sans-serif;font-size:3rem;font-weight:900;color:var(--blue);letter-spacing:.5em;animation:bootGlow .6s ease-in-out infinite alternate}
+@keyframes bootGlow{from{text-shadow:0 0 20px var(--glow)}to{text-shadow:0 0 60px var(--glow),0 0 100px rgba(0,170,255,.4)}}
+.boot-line{font-size:.6rem;letter-spacing:.2em;color:var(--dim);animation:bootIn .4s steps(1) forwards;opacity:0}
 .boot-line:nth-child(2){animation-delay:.3s}
 .boot-line:nth-child(3){animation-delay:.7s}
 .boot-line:nth-child(4){animation-delay:1.1s}
 .boot-line:nth-child(5){animation-delay:1.5s;color:var(--blue)}
-@keyframes bootType { to{opacity:1} }
+@keyframes bootIn{to{opacity:1}}
+.boot-bar{width:200px;height:2px;background:rgba(0,170,255,.1);margin-top:20px;overflow:hidden}
+.boot-bar-fill{height:100%;background:var(--blue);box-shadow:0 0 10px var(--glow);width:0;animation:bootFill 2s ease-out .3s forwards}
+@keyframes bootFill{to{width:100%}}
 
-.boot-bar-wrap { width:200px; height:2px; background:rgba(0,170,255,.1); margin-top:18px; overflow:hidden; }
-.boot-bar-fill { height:100%; background:var(--blue); box-shadow:0 0 10px var(--glow); width:0; animation:bootFill 1.8s ease-out .3s forwards; }
-@keyframes bootFill { to{width:100%} }
+/* ONBOARDING */
+.onboard{position:fixed;inset:0;background:var(--bg);z-index:800;display:flex;align-items:center;justify-content:center;transition:opacity .5s}
+.onboard.hide{opacity:0;pointer-events:none;display:none}
+.onboard-box{width:min(380px,92vw);padding:36px;border:1px solid rgba(0,170,255,.2);background:rgba(0,5,15,.9);display:flex;flex-direction:column;gap:22px;animation:fadeUp .5s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.ob-title{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:var(--blue);letter-spacing:.3em;text-shadow:0 0 20px var(--glow)}
+.ob-msg{font-size:.8rem;line-height:1.8;color:var(--text);letter-spacing:.03em}
+.ob-field{display:flex;flex-direction:column;gap:7px}
+.ob-label{font-size:.5rem;letter-spacing:.35em;color:var(--dim);text-transform:uppercase}
+.ob-input{background:transparent;border:none;border-bottom:1px solid rgba(0,170,255,.25);outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.9rem;padding:6px 2px;caret-color:var(--blue);transition:border-color .2s}
+.ob-input:focus{border-color:var(--blue)}
+.ob-input::placeholder{color:var(--dim);opacity:.4}
+.ob-btn{align-self:flex-end;background:transparent;border:1px solid rgba(0,170,255,.4);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.25em;padding:10px 24px;cursor:pointer;transition:all .2s}
+.ob-btn:hover{background:rgba(0,170,255,.12);box-shadow:0 0 16px rgba(0,170,255,.2)}
 
-/* ── MOBILE ── */
-@media (max-width: 768px) {
-  .screen { overflow: hidden; }
+/* SETTINGS */
+.cfg-overlay{position:fixed;inset:0;background:rgba(0,5,16,.88);z-index:700;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.cfg-overlay.open{opacity:1;pointer-events:all}
+.cfg-box{width:min(380px,92vw);border:1px solid rgba(0,170,255,.25);background:rgba(2,8,20,.97);padding:28px;display:flex;flex-direction:column;gap:20px;animation:fadeUp .3s ease-out}
+.cfg-title{font-family:'Orbitron',sans-serif;font-size:.85rem;font-weight:700;color:var(--blue);letter-spacing:.3em;text-shadow:0 0 16px var(--glow)}
+.cfg-section-label{font-size:.48rem;letter-spacing:.35em;color:var(--dim);text-transform:uppercase;padding-bottom:5px;border-bottom:1px solid rgba(0,170,255,.07)}
+.cfg-info{font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+.cfg-row{display:flex;gap:8px;flex-wrap:wrap}
+.cfg-btn-sm{background:transparent;border:1px solid rgba(0,170,255,.2);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:5px 12px;cursor:pointer;transition:all .2s}
+.cfg-btn-sm.sel,.cfg-btn-sm:hover{border-color:var(--blue);color:var(--blue);box-shadow:0 0 8px rgba(0,170,255,.15)}
+.cfg-save{align-self:flex-end;background:transparent;border:1px solid rgba(0,170,255,.4);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.25em;padding:8px 20px;cursor:pointer;transition:all .2s}
+.cfg-save:hover{background:rgba(0,170,255,.1)}
+.cfg-close{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:4px 10px;cursor:pointer;transition:all .2s}
+.cfg-close:hover{border-color:var(--blue);color:var(--blue)}
 
-  .top-bar { padding: 10px 16px; }
-  .logo { font-size: 1rem; }
-  .sys-label { display: none; }
+/* KNOWLEDGE PANEL */
+.know-overlay{position:fixed;inset:0;background:rgba(0,5,16,.92);z-index:650;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s}
+.know-overlay.open{opacity:1;pointer-events:all}
+.know-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(0,170,255,.1)}
+.know-title{font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--blue);letter-spacing:.3em}
+.know-list{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.know-item{border:1px solid rgba(0,170,255,.1);padding:12px 14px;background:rgba(0,170,255,.02);display:flex;flex-direction:column;gap:6px}
+.know-item-title{font-size:.65rem;color:var(--blue);letter-spacing:.1em;font-weight:bold}
+.know-item-summary{font-size:.6rem;color:var(--dim);line-height:1.6}
+.know-item-tags{display:flex;gap:5px;flex-wrap:wrap}
+.know-tag{font-size:.48rem;color:var(--dim);border:1px solid rgba(0,170,255,.12);padding:2px 7px;letter-spacing:.1em}
+.know-item-del{align-self:flex-end;background:transparent;border:none;color:rgba(100,100,100,.4);cursor:pointer;font-size:.7rem}
+.know-empty{padding:40px 20px;text-align:center;font-size:.65rem;color:var(--dim);line-height:2}
+.know-input-row{display:flex;gap:8px;padding:14px 20px;border-top:1px solid rgba(0,170,255,.08)}
+.know-input{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(0,170,255,.2);outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.8rem;padding:4px 2px;caret-color:var(--blue)}
+.know-input::placeholder{color:var(--dim);opacity:.4}
 
-  .main {
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-  }
+/* SCREEN */
+.screen{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10;display:flex;flex-direction:column;overflow:hidden}
 
-  .info-panel {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-left: none;
-    border-top: 1px solid rgba(0,170,255,.08);
-    padding: 14px 16px;
-    gap: 16px;
-    justify-content: space-between;
-    order: -1;
-  }
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(0,170,255,.1);flex-shrink:0}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.3rem;color:var(--blue);letter-spacing:.4em;text-shadow:0 0 20px var(--glow),0 0 40px rgba(0,170,255,.3)}
+.top-right{display:flex;align-items:center;gap:10px}
+.sys-label{font-size:.5rem;color:var(--dim);letter-spacing:.2em}
+.top-btn{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:4px 10px;cursor:pointer;transition:all .2s}
+.top-btn:hover{border-color:var(--blue);color:var(--blue)}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--glow);animation:dp 2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.3s;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.6)}
+.dot:nth-child(3){animation-delay:.6s;background:#ffaa00;box-shadow:0 0 8px rgba(255,170,0,.6)}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.2}}
 
-  .info-block { min-width: 80px; gap: 2px; }
-  .info-value { font-size: 1.1rem; }
-  .info-line { display: none; }
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden;min-height:0}
 
-  .chat-area {
-    padding: 14px 16px;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
+/* NUCLEUS AREA */
+.nucleus-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0 8px;gap:8px}
+.nucleus-wrap{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}
+.n-ring{position:absolute;border-radius:50%;border:1px solid transparent}
+.n-ring-1{width:150px;height:150px;border-top-color:rgba(0,200,255,.4);border-right-color:rgba(0,200,255,.15);animation:spin 8s linear infinite}
+.n-ring-2{width:115px;height:115px;border-bottom-color:rgba(0,150,255,.35);border-left-color:rgba(0,150,255,.1);animation:spin 5s linear infinite reverse}
+.n-ring-3{width:80px;height:80px;border-top-color:rgba(100,200,255,.5);animation:spin 3s linear infinite}
+.n-ring-eq{width:150px;height:45px;border:1px solid rgba(0,180,255,.12);border-radius:50%;animation:spinEq 12s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spinEq{from{transform:rotateX(75deg) rotate(0deg)}to{transform:rotateX(75deg) rotate(360deg)}}
+.nucleus{width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#00ffff,#0088cc 45%,#001830 80%);box-shadow:0 0 0 2px rgba(0,200,255,.3),0 0 20px rgba(0,200,255,.8),0 0 50px rgba(0,150,255,.4),0 0 80px rgba(0,100,200,.2);animation:np 2.5s ease-in-out infinite;position:relative;z-index:5;transition:background .4s,box-shadow .4s}
+@keyframes np{0%,100%{transform:scale(1)}50%{transform:scale(1.07);box-shadow:0 0 0 3px rgba(0,220,255,.5),0 0 35px rgba(0,220,255,1),0 0 80px rgba(0,170,255,.6),0 0 130px rgba(0,120,220,.4)}}
+.nucleus.listening{background:radial-gradient(circle at 30% 30%,#00ffff,#0099ff 45%,#001840 80%);animation:nl .3s ease-in-out infinite alternate}
+@keyframes nl{from{transform:scale(1.05);box-shadow:0 0 0 3px rgba(0,220,255,.5),0 0 40px rgba(0,220,255,1),0 0 90px rgba(0,170,255,.7)}to{transform:scale(1.18);box-shadow:0 0 0 5px rgba(0,240,255,.7),0 0 70px rgba(0,240,255,1),0 0 140px rgba(0,200,255,.8)}}
+.nucleus.thinking{background:radial-gradient(circle at 30% 30%,#cc88ff,#6600cc 45%,#0a0018 80%);animation:nt .5s ease-in-out infinite alternate}
+@keyframes nt{from{box-shadow:0 0 0 2px rgba(150,0,255,.4),0 0 30px rgba(150,0,255,.8),0 0 70px rgba(120,0,220,.5)}to{box-shadow:0 0 0 4px rgba(180,50,255,.6),0 0 55px rgba(180,50,255,1),0 0 110px rgba(150,0,240,.7)}}
+.nucleus.speaking{background:radial-gradient(circle at 30% 30%,#aaffee,#00ccaa 45%,#001812 80%);animation:ns .15s ease-in-out infinite alternate}
+@keyframes ns{from{transform:scale(1.08);box-shadow:0 0 0 3px rgba(0,255,200,.4),0 0 35px rgba(0,255,180,.8),0 0 80px rgba(0,200,150,.5)}to{transform:scale(1.2);box-shadow:0 0 0 6px rgba(0,255,200,.7),0 0 65px rgba(0,255,180,1),0 0 130px rgba(0,220,160,.7)}}
+.nucleus-label{font-size:.45rem;letter-spacing:.5em;color:rgba(0,200,255,.45)}
+.status-bar{display:flex;align-items:center;gap:7px;font-size:.48rem;letter-spacing:.3em}
+.s-dot{width:5px;height:5px;border-radius:50%;background:var(--dim);transition:all .3s}
+.s-dot.on{background:var(--blue);box-shadow:0 0 8px rgba(0,200,255,.8)}
+.s-text{color:var(--dim);transition:color .3s}
+.s-text.on{color:var(--blue2)}
 
-  .chat-messages { flex: 1; }
+/* CHAT */
+.chat-area{flex:1;display:flex;flex-direction:column;padding:0 16px;min-width:0;min-height:0;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 0 8px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+.chat-messages::-webkit-scrollbar{width:2px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--dim)}
+.msg{display:flex;flex-direction:column;gap:3px;max-width:88%;animation:fadeUp .3s ease-out}
+.msg-label{font-size:.5rem;letter-spacing:.25em;color:var(--dim)}
+.msg-yuki .msg-label{color:var(--blue)}
+.msg-bubble{padding:9px 14px;font-size:.8rem;line-height:1.7;letter-spacing:.03em}
+.msg-yuki .msg-bubble{background:rgba(0,170,255,.05);border-left:2px solid var(--blue);color:#c8e8f8}
+.msg-user{align-self:flex-end;text-align:right}
+.msg-user .msg-label{text-align:right}
+.msg-user .msg-bubble{background:rgba(255,255,255,.02);border-left:none;border-right:1px solid var(--dim);color:var(--dim)}
+.thinking{display:none;gap:5px;align-items:center;padding:6px 0;opacity:.5}
+.thinking.on{display:flex}
+.thinking span{font-size:.6rem;letter-spacing:.2em;color:var(--blue);animation:tb 1.2s ease-in-out infinite}
+.thinking span:nth-child(2){animation-delay:.2s}
+.thinking span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,100%{opacity:.2}50%{opacity:1}}
 
-  .kitt-section { padding: 0 16px 14px; }
+/* BOTTOM */
+.mode-row{display:flex;gap:5px;align-items:center;padding:6px 0;border-top:1px solid rgba(0,170,255,.07);margin-top:4px}
+.mode-lbl{font-size:.45rem;letter-spacing:.2em;color:var(--dim);flex-shrink:0}
+.mode-btn{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.12em;padding:4px 9px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.mode-btn.active{background:rgba(0,170,255,.12);border-color:var(--blue);color:var(--blue);box-shadow:0 0 8px rgba(0,170,255,.15)}
+.input-row{display:flex;align-items:center;gap:8px;padding:10px 0 14px;border-top:1px solid rgba(0,170,255,.08)}
+.prompt{color:var(--blue);font-size:.9rem;flex-shrink:0;text-shadow:0 0 8px var(--glow)}
+.chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.82rem;letter-spacing:.04em;caret-color:var(--blue)}
+.chat-input::placeholder{color:var(--dim);opacity:.45}
+.btn{background:transparent;border:1px solid rgba(0,170,255,.25);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:7px 12px;cursor:pointer;transition:all .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.btn:hover,.btn:active{background:rgba(0,170,255,.1);border-color:var(--blue)}
+.btn.mic-on{background:rgba(0,170,255,.15);border-color:var(--blue);animation:micGlow 1s ease-in-out infinite}
+@keyframes micGlow{0%,100%{box-shadow:0 0 8px rgba(0,170,255,.3)}50%{box-shadow:0 0 20px rgba(0,170,255,.6)}}
 
-  .btn { padding: 10px 16px; font-size: .65rem; }
-  .chat-input { font-size: .85rem; }
+/* INFO PANEL */
+.info-panel{width:0;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:0;border-left:none;overflow:hidden;transition:all .3s}
+@media(min-width:600px){
+  .info-panel{width:180px;padding:16px 20px 16px 0;border-left:1px solid rgba(0,170,255,.07)}
 }
+.info-block{display:flex;flex-direction:column;gap:2px}
+.info-label{font-size:.45rem;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+.info-value{font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.4rem;color:var(--blue);text-shadow:0 0 15px var(--glow);line-height:1}
+.info-sub{font-size:.52rem;color:var(--dim);letter-spacing:.12em;margin-top:2px}
+.info-line{width:24px;height:1px;background:linear-gradient(90deg,var(--blue),transparent);margin-top:4px}
+.temp-hot{color:#ff6633!important;text-shadow:0 0 15px rgba(255,100,50,.6)!important}
+.temp-warm{color:#ffaa00!important;text-shadow:0 0 15px rgba(255,170,0,.6)!important}
 
-/* ── ONBOARDING ── */
-.onboard-overlay {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  z-index: 600;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 0;
-  transition: opacity .6s;
-}
-.onboard-overlay.fade { opacity: 0; pointer-events: none; }
-.onboard-overlay.hidden { display: none; }
+/* KITT */
+.kitt-section{flex-shrink:0;padding:0 16px 14px;display:flex;flex-direction:column;gap:4px}
+.kitt-label{font-size:.45rem;letter-spacing:.35em;color:var(--dim);margin-bottom:2px}
+.kitt-row{display:flex;align-items:center;gap:2px;height:12px}
+.kitt-bar{flex:1;height:100%;display:flex;gap:2px;align-items:center}
+.kitt-seg{flex:1;height:100%;background:rgba(0,100,180,.3);transition:background .05s,box-shadow .05s}
+.kitt-seg.on{background:var(--blue);box-shadow:0 0 8px var(--glow),0 0 16px rgba(0,170,255,.4)}
+.kitt-seg.on.peak{background:#aaeeff;box-shadow:0 0 12px #aaeeff,0 0 24px var(--glow)}
+.kitt-row.cascade{opacity:0;transform:scaleY(.3);transition:opacity .2s,transform .2s}
+.kitt-row.cascade.visible{opacity:.5;transform:scaleY(1)}
+.kitt-row.cascade.visible+.cascade.visible{opacity:.28}
+.kitt-row.cascade.visible+.cascade.visible+.cascade.visible{opacity:.1}
 
-.onboard-box {
-  display: flex; flex-direction: column;
-  gap: 28px;
-  width: min(420px, 90vw);
-  padding: 40px 36px;
-  border: 1px solid rgba(0,170,255,.2);
-  background: rgba(0,10,20,.8);
-  box-shadow: 0 0 60px rgba(0,170,255,.08);
-  animation: msgIn .5s ease-out;
-}
+/* MOBILE INFO ROW */
+.mobile-info{display:flex;gap:0;border-top:1px solid rgba(0,170,255,.07);flex-shrink:0}
+@media(min-width:600px){.mobile-info{display:none}}
+.mi-block{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-right:1px solid rgba(0,170,255,.06)}
+.mi-block:last-child{border-right:none}
+.mi-label{font-size:.4rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.mi-val{font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--blue);text-shadow:0 0 10px var(--glow)}
+.mi-sub{font-size:.38rem;color:var(--dim);letter-spacing:.08em}
 
-.onboard-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.1rem; font-weight: 700;
-  color: var(--blue); letter-spacing: .3em;
-  text-shadow: 0 0 20px var(--glow);
-}
-
-.onboard-msg {
-  font-size: .8rem; line-height: 1.9;
-  color: var(--text); letter-spacing: .04em;
-}
-
-.onboard-field { display: flex; flex-direction: column; gap: 8px; }
-
-.onboard-label {
-  font-size: .55rem; letter-spacing: .35em;
-  color: var(--text-dim); text-transform: uppercase;
-}
-
-.onboard-input {
-  background: transparent;
-  border: none; border-bottom: 1px solid rgba(0,170,255,.3);
-  outline: none; color: var(--text);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: .9rem; letter-spacing: .08em;
-  padding: 6px 2px;
-  caret-color: var(--blue);
-  transition: border-color .2s;
-}
-.onboard-input:focus { border-color: var(--blue); }
-.onboard-input::placeholder { color: var(--text-dim); opacity: .4; }
-
-.onboard-btn {
-  align-self: flex-end;
-  background: transparent;
-  border: 1px solid rgba(0,170,255,.4);
-  color: var(--blue);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: .65rem; letter-spacing: .25em;
-  padding: 10px 24px; cursor: pointer;
-  transition: all .2s;
-}
-.onboard-btn:hover {
-  background: rgba(0,170,255,.12);
-  border-color: var(--blue);
-  box-shadow: 0 0 16px rgba(0,170,255,.2);
-}
-
-/* ── VOICE RADIO ── */
-.voice-options { display: flex; flex-direction: column; gap: 10px; }
-
-.voice-option {
-  display: flex; align-items: center; gap: 12px;
-  cursor: pointer; padding: 8px 10px;
-  border: 1px solid rgba(0,170,255,.1);
-  transition: all .2s;
-}
-.voice-option:hover { border-color: rgba(0,170,255,.35); background: rgba(0,170,255,.04); }
-.voice-option.selected { border-color: var(--blue); background: rgba(0,170,255,.08); }
-
-.voice-option input[type=radio] { display: none; }
-
-.voice-radio-dot {
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 1px solid var(--text-dim); flex-shrink: 0;
-  transition: all .2s;
-}
-.voice-option.selected .voice-radio-dot {
-  background: var(--blue); border-color: var(--blue);
-  box-shadow: 0 0 8px var(--glow);
-}
-
-.voice-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.voice-name { font-size: .7rem; letter-spacing: .15em; color: var(--text); }
-.voice-desc { font-size: .55rem; letter-spacing: .1em; color: var(--text-dim); }
-
-.voice-test-btn {
-  background: transparent; border: 1px solid rgba(0,170,255,.2);
-  color: var(--text-dim); font-family: 'Share Tech Mono', monospace;
-  font-size: .5rem; letter-spacing: .15em; padding: 4px 8px;
-  cursor: pointer; transition: all .2s; flex-shrink: 0;
-}
-.voice-test-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-/* ── SETTINGS PANEL ── */
-.settings-overlay {
-  position: fixed; inset: 0;
-  background: rgba(2,8,16,.85);
-  z-index: 700;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s;
-}
-.settings-overlay.open { opacity: 1; pointer-events: all; }
-
-.settings-box {
-  width: min(400px, 92vw);
-  border: 1px solid rgba(0,170,255,.25);
-  background: rgba(2,8,20,.97);
-  box-shadow: 0 0 60px rgba(0,170,255,.1);
-  padding: 32px 28px;
-  display: flex; flex-direction: column; gap: 24px;
-  animation: msgIn .3s ease-out;
-}
-
-.settings-header {
-  display: flex; align-items: center; justify-content: space-between;
-}
-.settings-title {
-  font-family: 'Orbitron', sans-serif; font-size: .9rem;
-  font-weight: 700; color: var(--blue); letter-spacing: .3em;
-  text-shadow: 0 0 16px var(--glow);
-}
-.settings-close {
-  background: transparent; border: 1px solid rgba(0,170,255,.2);
-  color: var(--text-dim); font-family: 'Share Tech Mono', monospace;
-  font-size: .6rem; letter-spacing: .15em; padding: 4px 10px;
-  cursor: pointer; transition: all .2s;
-}
-.settings-close:hover { border-color: var(--blue); color: var(--blue); }
-
-.settings-section { display: flex; flex-direction: column; gap: 10px; }
-.settings-section-label {
-  font-size: .5rem; letter-spacing: .35em;
-  color: var(--text-dim); text-transform: uppercase;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(0,170,255,.08);
-}
-
-/* Botão de config no header */
-.cfg-btn {
-  background: transparent; border: 1px solid rgba(0,170,255,.15);
-  color: var(--text-dim); font-family: 'Share Tech Mono', monospace;
-  font-size: .65rem; letter-spacing: .15em; padding: 4px 10px;
-  cursor: pointer; transition: all .2s;
-}
-.cfg-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-/* ── RESPONSE MODE ── */
-.mode-selector {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 8px 0 0;
-  border-top: 1px solid rgba(0,170,255,.08);
-  margin-top: 8px;
-}
-.mode-label {
-  font-size: .5rem;
-  letter-spacing: .25em;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-.mode-btn {
-  background: transparent;
-  border: 1px solid rgba(0,170,255,.2);
-  color: var(--text-dim);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: .55rem;
-  letter-spacing: .15em;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: all .2s;
-  flex-shrink: 0;
-}
-.mode-btn.active {
-  background: rgba(0,170,255,.15);
-  border-color: var(--blue);
-  color: var(--blue);
-  box-shadow: 0 0 8px rgba(0,170,255,.2);
-}
-.mode-btn:hover { border-color: var(--blue); color: var(--text); }
-
-/* ── NOTÍCIAS PAINEL DESKTOP ── */
-.news-panel {
-  width:220px; flex-shrink:0; display:flex; flex-direction:column;
-  border-right:1px solid rgba(0,170,255,.08); overflow:hidden;
-}
-.news-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 14px 8px; border-bottom:1px solid rgba(0,170,255,.08); flex-shrink:0;
-}
-.news-title { font-size:.5rem; letter-spacing:.35em; color:var(--text-dim); text-transform:uppercase; }
-.news-refresh {
-  background:transparent; border:none; color:var(--text-dim);
-  font-family:'Share Tech Mono',monospace; font-size:.55rem;
-  cursor:pointer; padding:2px 6px; letter-spacing:.1em; transition:color .2s;
-}
-.news-refresh:hover { color:var(--blue); }
-.news-scroll {
-  flex:1; overflow-y:auto; overflow-x:hidden; padding:8px 0;
-  scrollbar-width:thin; scrollbar-color:var(--blue-dim) transparent;
-}
-.news-scroll::-webkit-scrollbar { width:2px; }
-.news-scroll::-webkit-scrollbar-thumb { background:var(--blue-dim); }
-.news-cat-label {
-  font-size:.45rem; letter-spacing:.3em; color:var(--blue);
-  padding:8px 14px 4px; text-transform:uppercase; opacity:.7;
-}
-.news-item {
-  padding:7px 14px; cursor:pointer;
-  border-left:2px solid transparent; transition:all .2s;
-}
-.news-item:hover { border-left-color:var(--blue); background:rgba(0,170,255,.04); }
-.news-item-title {
-  font-size:.6rem; line-height:1.5; color:var(--text); letter-spacing:.02em;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-}
-.news-item-src { font-size:.48rem; color:var(--text-dim); letter-spacing:.1em; margin-top:3px; }
-.news-empty { padding:20px 14px; font-size:.6rem; color:var(--text-dim); letter-spacing:.1em; line-height:1.8; text-align:center; }
-.news-loading { padding:14px; display:flex; gap:4px; justify-content:center; }
-.news-loading span {
-  width:4px; height:4px; border-radius:50%; background:var(--blue);
-  animation:thinkBlink 1.2s ease-in-out infinite;
-}
-.news-loading span:nth-child(2){animation-delay:.2s}
-.news-loading span:nth-child(3){animation-delay:.4s}
-
-/* ── CATEGORIAS NO CFG ── */
-.news-cat-options { display:flex; flex-direction:column; gap:6px; }
-.news-cat-option {
-  display:flex; align-items:center; gap:10px; padding:7px 10px;
-  cursor:pointer; border:1px solid rgba(0,170,255,.1); transition:all .2s;
-}
-.news-cat-option:hover { border-color:rgba(0,170,255,.35); background:rgba(0,170,255,.04); }
-.news-cat-option.selected { border-color:var(--blue); background:rgba(0,170,255,.08); }
-.news-cat-check {
-  width:12px; height:12px; border:1px solid var(--text-dim); flex-shrink:0;
-  transition:all .2s; display:flex; align-items:center; justify-content:center; font-size:.5rem;
-}
-.news-cat-option.selected .news-cat-check { background:var(--blue); border-color:var(--blue); color:#000; }
-.news-cat-name { font-size:.65rem; letter-spacing:.12em; color:var(--text); }
-
-/* ── CARROSSEL MOBILE ── */
-.news-carousel-wrap {
-  display:none; flex-direction:column; gap:4px;
-  padding:8px 0 4px; border-top:1px solid rgba(0,170,255,.08);
-}
-.news-carousel-header {
-  display:flex; align-items:center; justify-content:space-between;
-}
-.news-carousel-label { font-size:.45rem; letter-spacing:.35em; color:var(--blue); opacity:.7; }
-.news-carousel-refresh {
-  background:transparent; border:none; color:var(--text-dim);
-  font-family:'Share Tech Mono',monospace; font-size:.5rem;
-  letter-spacing:.1em; cursor:pointer; transition:color .2s; padding:2px 4px;
-}
-.news-carousel-refresh:hover { color:var(--blue); }
-.news-carousel {
-  display:flex; gap:8px; overflow-x:auto; overflow-y:hidden;
-  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
-  scrollbar-width:none; padding-bottom:2px;
-}
-.news-carousel::-webkit-scrollbar { display:none; }
-.news-card {
-  flex-shrink:0; width:190px; scroll-snap-align:start;
-  border:1px solid rgba(0,170,255,.15); background:rgba(0,170,255,.03);
-  padding:8px 10px; cursor:pointer; transition:all .2s;
-}
-.news-card:active { border-color:var(--blue); background:rgba(0,170,255,.08); }
-.news-card-cat { font-size:.42rem; letter-spacing:.25em; color:var(--blue); opacity:.7; margin-bottom:4px; }
-.news-card-title { font-size:.6rem; line-height:1.5; color:var(--text); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-
-@media (max-width:768px) {
-  .news-panel { display:none; }
-  .news-carousel-wrap { display:flex; }
-}
+/* MEMORY STATUS */
+.mem-status{display:flex;align-items:center;gap:5px;font-size:.42rem;letter-spacing:.18em;color:var(--dim);padding:3px 0}
+.mem-dot{width:4px;height:4px;border-radius:50%;background:var(--dim)}
+.mem-dot.cloud{background:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.6)}
+.mem-dot.local{background:#ffaa00;box-shadow:0 0 6px rgba(255,170,0,.5)}
 </style>
 </head>
 <body>
 
-<div class="boot-overlay" id="bootOverlay">
+<div class="scanline"></div>
+<canvas id="qcanvas"></canvas>
+
+<!-- BOOT -->
+<div class="boot" id="boot">
   <div class="boot-logo">YUKI</div>
   <div class="boot-line">▸ SISTEMA INICIANDO...</div>
-  <div class="boot-line">▸ CONECTANDO AO NÚCLEO IA...</div>
+  <div class="boot-line">▸ CONECTANDO AO NUCLEO IA...</div>
   <div class="boot-line">▸ CARREGANDO CONTEXTO...</div>
   <div class="boot-line">▸ INTERFACE PRONTA</div>
   <div class="boot-line" id="bootGreet">▸ OLÁ ◈</div>
-  <div class="boot-bar-wrap"><div class="boot-bar-fill"></div></div>
+  <div class="boot-bar"><div class="boot-bar-fill"></div></div>
 </div>
 
-<div class="onboard-overlay hidden" id="onboardOverlay">
+<!-- ONBOARDING -->
+<div class="onboard hide" id="onboard">
   <div class="onboard-box">
-    <div class="onboard-title">◈ PRIMEIRO ACESSO</div>
-    <div class="onboard-msg">Olá. Sou a Yuki — sua assistente pessoal.<br>Para personalizar sua experiência, preciso de algumas informações.</div>
-    <div class="onboard-field">
-      <div class="onboard-label">Como devo te chamar?</div>
-      <input class="onboard-input" id="onboardName" type="text" placeholder="Seu nome..." autocomplete="off" maxlength="40">
+    <div class="ob-title">◈ PRIMEIRO ACESSO</div>
+    <div class="ob-msg">Olá. Sou a Yuki — sua parceira pessoal.<br>Preciso de algumas informações para começar.</div>
+    <div class="ob-field">
+      <div class="ob-label">Como devo te chamar?</div>
+      <input class="ob-input" id="obName" type="text" placeholder="Seu nome..." autocomplete="off" maxlength="40">
     </div>
-    <div class="onboard-field">
-      <div class="onboard-label">Sua idade</div>
-      <input class="onboard-input" id="onboardAge" type="number" placeholder="Ex: 35" min="1" max="120">
+    <div class="ob-field">
+      <div class="ob-label">Sua idade</div>
+      <input class="ob-input" id="obAge" type="number" placeholder="Ex: 35" min="1" max="120">
     </div>
-    <div class="onboard-field">
-      <div class="onboard-label">Voz da Yuki</div>
-      <div class="voice-options" id="onboardVoiceOptions">
-        <label class="voice-option" data-voice="feminine">
-          <input type="radio" name="onboardVoice" value="feminine">
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">FEMININA</div>
-            <div class="voice-desc">Voz feminina natural em português</div>
-          </div>
-          <button class="voice-test-btn" data-test="feminine">▶ TESTAR</button>
-        </label>
-        <label class="voice-option" data-voice="masculine">
-          <input type="radio" name="onboardVoice" value="masculine">
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">MASCULINA</div>
-            <div class="voice-desc">Voz masculina natural em português</div>
-          </div>
-          <button class="voice-test-btn" data-test="masculine">▶ TESTAR</button>
-        </label>
-        <label class="voice-option selected" data-voice="robotic">
-          <input type="radio" name="onboardVoice" value="robotic" checked>
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">ROBÓTICA</div>
-            <div class="voice-desc">Tom mecânico — estilo Yuki padrão</div>
-          </div>
-          <button class="voice-test-btn" data-test="robotic">▶ TESTAR</button>
-        </label>
-      </div>
-    </div>
-    <button class="onboard-btn" id="onboardBtn">CONFIRMAR ›</button>
+    <button class="ob-btn" id="obBtn">CONFIRMAR ›</button>
   </div>
 </div>
 
-<!-- PAINEL DE CONFIGURAÇÕES -->
-<div class="settings-overlay" id="settingsOverlay">
-  <div class="settings-box">
-    <div class="settings-header">
-      <div class="settings-title">◈ CONFIGURAÇÕES</div>
-      <button class="settings-close" id="settingsClose">FECHAR ✕</button>
+<!-- SETTINGS -->
+<div class="cfg-overlay" id="cfgOverlay">
+  <div class="cfg-box">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="cfg-title">◈ CONFIGURAÇÕES</div>
+      <button class="cfg-close" id="cfgClose">FECHAR ✕</button>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-label">Perfil</div>
-      <div style="font-size:.7rem;color:var(--text-dim);letter-spacing:.1em" id="settingsProfileInfo">—</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Perfil</div>
+      <div class="cfg-info" id="cfgProfileInfo">—</div>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-label">Voz da Yuki</div>
-      <div class="voice-options" id="settingsVoiceOptions">
-        <label class="voice-option" data-voice="feminine">
-          <input type="radio" name="settingsVoice" value="feminine">
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">FEMININA</div>
-            <div class="voice-desc">Voz feminina natural em português</div>
-          </div>
-          <button class="voice-test-btn" data-test="feminine">▶ TESTAR</button>
-        </label>
-        <label class="voice-option" data-voice="masculine">
-          <input type="radio" name="settingsVoice" value="masculine">
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">MASCULINA</div>
-            <div class="voice-desc">Voz masculina natural em português</div>
-          </div>
-          <button class="voice-test-btn" data-test="masculine">▶ TESTAR</button>
-        </label>
-        <label class="voice-option" data-voice="robotic">
-          <input type="radio" name="settingsVoice" value="robotic">
-          <div class="voice-radio-dot"></div>
-          <div class="voice-info">
-            <div class="voice-name">ROBÓTICA</div>
-            <div class="voice-desc">Tom mecânico — estilo Yuki padrão</div>
-          </div>
-          <button class="voice-test-btn" data-test="robotic">▶ TESTAR</button>
-        </label>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Voz da Yuki</div>
+      <div class="cfg-row" id="cfgVoiceRow">
+        <button class="cfg-btn-sm" data-voice="feminine">FEMININA</button>
+        <button class="cfg-btn-sm" data-voice="masculine">MASCULINA</button>
+        <button class="cfg-btn-sm sel" data-voice="robotic">ROBÓTICA</button>
       </div>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-label">Categorias de Notícias</div>
-      <div class="news-cat-options" id="settingsNewsCategories">
-        <div class="news-cat-option selected" data-cat="geral">
-          <div class="news-cat-check">✓</div><div class="news-cat-name">NOTÍCIAS GERAIS</div>
-        </div>
-        <div class="news-cat-option" data-cat="tecnologia">
-          <div class="news-cat-check">✓</div><div class="news-cat-name">TECNOLOGIA</div>
-        </div>
-        <div class="news-cat-option" data-cat="esportes">
-          <div class="news-cat-check">✓</div><div class="news-cat-name">ESPORTES</div>
-        </div>
-        <div class="news-cat-option" data-cat="economia">
-          <div class="news-cat-check">✓</div><div class="news-cat-name">ECONOMIA</div>
-        </div>
-      </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Memória</div>
+      <div class="cfg-info" id="cfgMemInfo">—</div>
+      <button class="cfg-btn-sm" id="cfgViewKnow" style="align-self:flex-start">◈ VER O QUE YUKI SABE</button>
     </div>
-    <button class="onboard-btn" id="settingsSave" style="align-self:flex-end">SALVAR ›</button>
+    <button class="cfg-save" id="cfgSave">SALVAR ›</button>
   </div>
 </div>
 
-<div class="bg-grid"></div>
-<div class="bg-vignette"></div>
+<!-- KNOWLEDGE PANEL -->
+<div class="know-overlay" id="knowOverlay">
+  <div class="know-header">
+    <div class="know-title">◈ O QUE YUKI SABE</div>
+    <button class="cfg-close" id="knowClose">FECHAR ✕</button>
+  </div>
+  <div class="know-list" id="knowList"></div>
+  <div class="know-input-row">
+    <span class="prompt" style="font-size:.8rem">›_</span>
+    <input class="know-input" id="knowInput" placeholder="Cole um texto para Yuki aprender...">
+    <button class="btn" id="knowSaveBtn">GUARDAR</button>
+  </div>
+</div>
 
+<!-- SCREEN -->
 <div class="screen">
-
   <div class="top-bar">
     <div class="logo">YUKI</div>
-    <div class="sys-label">SISTEMA ATIVO ◈ V4.3</div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="cfg-btn" id="cfgBtn">⚙ CFG</button>
-      <div class="status-dots">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-      </div>
+    <div class="top-right">
+      <span class="sys-label" id="sysLabel">SISTEMA ATIVO ◈ V4.3</span>
+      <button class="top-btn" id="knowBtn">◈ SABE</button>
+      <button class="top-btn" id="cfgBtn">⚙ CFG</button>
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     </div>
   </div>
 
   <div class="main">
-
-    <!-- PAINEL DE NOTÍCIAS (desktop) -->
-    <div class="news-panel" id="newsPanel">
-      <div class="news-header">
-        <div class="news-title">◈ NOTÍCIAS</div>
-        <button class="news-refresh" id="newsRefreshBtn">↻ ATUALIZAR</button>
-      </div>
-      <div class="news-scroll" id="newsScroll">
-        <div class="news-loading" id="newsLoading"><span></span><span></span><span></span></div>
-      </div>
-    </div>
-
     <div class="chat-area">
-      <div class="chat-messages" id="chatMessages">
-        <div class="msg msg-yuki">
-          <div class="msg-label">◈ YUKI 雪</div>
-          <div class="msg-bubble">Sistema online. Olá, Fábio — estou aqui. Como posso ajudá-lo?</div>
+
+      <!-- Nucleus -->
+      <div class="nucleus-area">
+        <div class="nucleus-wrap">
+          <div class="n-ring n-ring-eq"></div>
+          <div class="n-ring n-ring-1"></div>
+          <div class="n-ring n-ring-2"></div>
+          <div class="n-ring n-ring-3"></div>
+          <div class="nucleus" id="nucleus"></div>
+        </div>
+        <div class="nucleus-label">幸 · Y U K I · 雪</div>
+        <div class="status-bar">
+          <div class="s-dot on" id="sDot"></div>
+          <div class="s-text on" id="sText">◈ AGUARDANDO</div>
+        </div>
+        <div class="mem-status">
+          <div class="mem-dot" id="memDot"></div>
+          <span id="memLabel">MEM: LOCAL</span>
         </div>
       </div>
-      <div class="thinking" id="thinking">
-        <span>▸</span><span>▸</span><span>▸</span>
-      </div>
-      <div class="mode-selector">
-        <span class="mode-label">SAÍDA ›</span>
+
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="thinking" id="thinking"><span>▸</span><span>▸</span><span>▸</span></div>
+
+      <div class="mode-row">
+        <span class="mode-lbl">SAÍDA›</span>
         <button class="mode-btn active" id="modeText">TEXTO</button>
-        <button class="mode-btn" id="modeVoiceText">VOZ+TEXTO</button>
+        <button class="mode-btn" id="modeVT">VOZ+TEXTO</button>
         <button class="mode-btn" id="modeVoice">SÓ VOZ</button>
       </div>
 
-      <!-- CARROSSEL MOBILE -->
-      <div class="news-carousel-wrap" id="newsCarouselWrap">
-        <div class="news-carousel-header">
-          <div class="news-carousel-label">◈ NOTÍCIAS</div>
-          <button class="news-carousel-refresh" id="carouselRefreshBtn">↻</button>
-        </div>
-        <div class="news-carousel" id="newsCarousel">
-          <div class="news-loading"><span></span><span></span><span></span></div>
-        </div>
-      </div>
-
       <div class="input-row">
-        <span class="prompt-symbol">›_</span>
-        <input class="chat-input" id="chatInput" type="text" placeholder="Digite ou fale..." autocomplete="off">
+        <span class="prompt">›_</span>
+        <input class="chat-input" id="chatInput" type="text" placeholder="Fale com a Yuki..." autocomplete="off">
         <button class="btn" id="micBtn">MIC</button>
         <button class="btn" id="sendBtn">ENVIAR</button>
       </div>
     </div>
 
+    <!-- INFO PANEL DESKTOP -->
     <div class="info-panel">
       <div class="info-block">
         <div class="info-label">Horário</div>
@@ -825,7 +345,7 @@ body::after {
       </div>
       <div class="info-block">
         <div class="info-label">Data</div>
-        <div class="info-value" style="font-size:1rem" id="dateVal">---</div>
+        <div class="info-value" style="font-size:.9rem" id="dateVal">---</div>
         <div class="info-sub" id="weekVal">---</div>
         <div class="info-line"></div>
       </div>
@@ -837,503 +357,753 @@ body::after {
       </div>
       <div class="info-block">
         <div class="info-label">Condição</div>
-        <div class="info-sub" id="weatherDesc" style="font-size:.7rem;color:var(--text);line-height:1.6">—</div>
+        <div class="info-sub" id="weatherDesc" style="font-size:.65rem;color:var(--text);line-height:1.6">—</div>
         <div class="info-line"></div>
       </div>
     </div>
-
   </div>
 
+  <!-- INFO MOBILE -->
+  <div class="mobile-info">
+    <div class="mi-block">
+      <div class="mi-label">Hora</div>
+      <div class="mi-val" id="mClockVal">--:--</div>
+    </div>
+    <div class="mi-block">
+      <div class="mi-label">Data</div>
+      <div class="mi-val" style="font-size:.65rem" id="mDateVal">---</div>
+      <div class="mi-sub" id="mWeekVal">---</div>
+    </div>
+    <div class="mi-block">
+      <div class="mi-label">Temp</div>
+      <div class="mi-val" id="mTempVal">--°</div>
+      <div class="mi-sub" id="mWeatherDesc">—</div>
+    </div>
+  </div>
+
+  <!-- KITT -->
   <div class="kitt-section">
     <div class="kitt-label">◈ ANÁLISE DE VOZ</div>
-    <div class="kitt-row" id="kittRow1"><div class="kitt-bar" id="kittBar1"></div></div>
-    <div class="kitt-row cascade" id="kittRow2"><div class="kitt-bar" id="kittBar2"></div></div>
-    <div class="kitt-row cascade" id="kittRow3"><div class="kitt-bar" id="kittBar3"></div></div>
-    <div class="kitt-row cascade" id="kittRow4" style="height:8px"><div class="kitt-bar" id="kittBar4"></div></div>
+    <div class="kitt-row" id="kr1"><div class="kitt-bar" id="kb1"></div></div>
+    <div class="kitt-row cascade" id="kr2"><div class="kitt-bar" id="kb2"></div></div>
+    <div class="kitt-row cascade" id="kr3"><div class="kitt-bar" id="kb3"></div></div>
+    <div class="kitt-row cascade" id="kr4" style="height:8px"><div class="kitt-bar" id="kb4"></div></div>
   </div>
-
 </div>
 
 <script>
-// ── STORAGE KEYS ──────────────────────────────────────────────────────────
-const STORAGE_PROFILE  = 'yuki_profile';
-const STORAGE_HISTORY  = 'yuki_history';
-const STORAGE_MEMORY   = 'yuki_memory';
-const STORAGE_NEWS_CATS = 'yuki_news_cats';
-const MAX_HISTORY      = 50;
-const MAX_FICHAS       = 3;
-const MSGS_POR_FICHA   = 45;
-const MAX_NEWS_PER_CAT = 3;
-const PROXY = 'https://yuki-proxy.fabiocboselli.workers.dev/';
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+const PROXY         = 'https://yuki-proxy.fabiocboselli.workers.dev/';
+const MAX_HISTORY   = 50;
+const MSGS_FICHA    = 45;
+const MAX_FICHAS    = 3;
 
-const RSS_FEEDS = {
-  geral:      { label:'GERAIS',     url:'https://g1.globo.com/rss/g1/' },
-  tecnologia: { label:'TECNOLOGIA', url:'https://g1.globo.com/rss/g1/tecnologia/' },
-  esportes:   { label:'ESPORTES',   url:'https://ge.globo.com/rss/ge/' },
-  economia:   { label:'ECONOMIA',   url:'https://g1.globo.com/rss/g1/economia/' }
+// Firebase config — substitua pelos seus valores
+const FB_CONFIG = {
+  apiKey:            "SUA_API_KEY",
+  authDomain:        "SEU_PROJETO.firebaseapp.com",
+  projectId:         "SEU_PROJETO",
+  storageBucket:     "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId:             "SEU_APP_ID"
 };
-const RSS_PROXY = 'https://api.allorigins.win/get?url=';
 
-// ── PERFIL ────────────────────────────────────────────────────────────────
-function loadProfile()  { try { return JSON.parse(localStorage.getItem(STORAGE_PROFILE)) || null; } catch { return null; } }
-function saveProfile(p) { localStorage.setItem(STORAGE_PROFILE, JSON.stringify(p)); }
+// ═══════════════════════════════════════════════════════════
+// FIREBASE — carrega dinamicamente
+// ═══════════════════════════════════════════════════════════
+let db = null, fbAuth = null, fbUid = null;
+let fbReady = false;
 
-// ── HISTÓRICO ─────────────────────────────────────────────────────────────
-function loadHistory()   { try { return JSON.parse(localStorage.getItem(STORAGE_HISTORY)) || []; } catch { return []; } }
-function saveHistory(h)  { localStorage.setItem(STORAGE_HISTORY, JSON.stringify(h.slice(-MAX_HISTORY))); }
+async function initFirebase() {
+  try {
+    // Importa Firebase via CDN
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc, query, orderBy, limit } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const { getAuth, signInAnonymously } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
 
-// ── FICHAS DE MEMÓRIA ─────────────────────────────────────────────────────
-function loadFichas()    { try { return JSON.parse(localStorage.getItem(STORAGE_MEMORY)) || []; } catch { return []; } }
-function saveFichas(f)   { localStorage.setItem(STORAGE_MEMORY, JSON.stringify(f.slice(-MAX_FICHAS))); }
+    const app  = initializeApp(FB_CONFIG);
+    db         = getFirestore(app);
+    fbAuth     = getAuth(app);
 
-function buildMemoryBlock() {
-  const fichas = loadFichas();
-  if (!fichas.length) return '';
-  const blocos = fichas.map(f => `[${f.data}]\n${f.resumo}`).join('\n\n');
-  return `\n\n---\nMEMÓRIA DE CONVERSAS ANTERIORES:\n${blocos}\n---`;
+    // Auth anonima
+    const cred = await signInAnonymously(fbAuth);
+    fbUid      = cred.user.uid;
+    fbReady    = true;
+
+    // Expoe funcoes globalmente para uso abaixo
+    window._fb = { doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc, query, orderBy, limit };
+
+    updateMemStatus(true);
+    console.log('Firebase OK — uid:', fbUid);
+  } catch(e) {
+    console.warn('Firebase indisponivel — usando localStorage:', e.message);
+    updateMemStatus(false);
+  }
 }
 
-async function gerarFichaDeResumo(hist, prof) {
+function updateMemStatus(cloud) {
+  document.getElementById('memDot').className  = 'mem-dot ' + (cloud ? 'cloud' : 'local');
+  document.getElementById('memLabel').textContent = cloud ? 'MEM: NUVEM ◈' : 'MEM: LOCAL';
+}
+
+// ═══════════════════════════════════════════════════════════
+// STORAGE — Firebase com fallback para localStorage
+// ═══════════════════════════════════════════════════════════
+async function fbSave(path, data) {
+  if (!fbReady || !fbUid) return false;
   try {
-    const conteudo = hist.slice(-MSGS_POR_FICHA)
-      .map(m => `${m.role==='user'?prof.name:'Yuki'}: ${m.content}`).join('\n');
+    const ref = window._fb.doc(db, 'users', fbUid, ...path.split('/'));
+    await window._fb.setDoc(ref, data, { merge: true });
+    return true;
+  } catch { return false; }
+}
+
+async function fbGet(path) {
+  if (!fbReady || !fbUid) return null;
+  try {
+    const ref = window._fb.doc(db, 'users', fbUid, ...path.split('/'));
+    const snap = await window._fb.getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+  } catch { return null; }
+}
+
+// Perfil
+async function loadProfile() {
+  const fb = await fbGet('profile/main');
+  if (fb) return fb;
+  try { return JSON.parse(localStorage.getItem('yuki_profile')) || null; } catch { return null; }
+}
+async function saveProfile(p) {
+  localStorage.setItem('yuki_profile', JSON.stringify(p));
+  await fbSave('profile/main', p);
+}
+
+// Historico
+async function loadHistory() {
+  const fb = await fbGet('history/current');
+  if (fb?.messages) return fb.messages;
+  try { return JSON.parse(localStorage.getItem('yuki_history')) || []; } catch { return []; }
+}
+async function saveHistory(h) {
+  const sliced = h.slice(-MAX_HISTORY);
+  localStorage.setItem('yuki_history', JSON.stringify(sliced));
+  await fbSave('history/current', { messages: sliced, updatedAt: new Date().toISOString() });
+}
+
+// Fichas de memoria
+async function loadFichas() {
+  try { return JSON.parse(localStorage.getItem('yuki_memory')) || []; } catch { return []; }
+}
+async function saveFicha(resumo) {
+  const date = new Date().toLocaleDateString('pt-BR');
+  const ficha = { id: Date.now(), data: date, resumo };
+  const fichas = await loadFichas();
+  fichas.push(ficha);
+  const sliced = fichas.slice(-MAX_FICHAS);
+  localStorage.setItem('yuki_memory', JSON.stringify(sliced));
+  if (fbReady && fbUid) {
+    try {
+      await window._fb.addDoc(
+        window._fb.collection(db, 'users', fbUid, 'memory'),
+        { resumo, date, createdAt: new Date().toISOString() }
+      );
+    } catch {}
+  }
+}
+
+// Conhecimento (RAG)
+async function saveKnowledge(raw, note) {
+  // Pede resumo para o modelo
+  let summary = raw.length > 300 ? raw.substring(0, 300) : raw;
+  let title = 'Conhecimento salvo';
+  let tags = [];
+  try {
     const res = await fetch(PROXY, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages:[
-        { role:'system', content:'Gere uma ficha de memória concisa em português com: tópicos discutidos, decisões tomadas, ações pendentes e informações importantes sobre o usuário. Máximo 300 palavras. Seja direto.' },
-        { role:'user', content:`Conversa:\n\n${conteudo}` }
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [
+        { role: 'system', content: 'Extraia informacoes importantes. Responda APENAS JSON valido sem markdown: {"title":"titulo curto","summary":"resumo 2-3 frases","tags":["tag1","tag2"]}' },
+        { role: 'user', content: `${note ? 'Nota do usuario: ' + note + '\n\n' : ''}Conteudo:\n${raw}` }
       ]})
     });
     const data = await res.json();
-    const resumo = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!resumo) return;
-    const fichas = loadFichas();
-    fichas.push({ id: Date.now(), data: new Date().toLocaleDateString('pt-BR'), resumo });
-    saveFichas(fichas);
-  } catch(e) { /* falha silenciosa */ }
+    const text = data?.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    summary = parsed.summary || summary;
+    title   = parsed.title   || title;
+    tags    = parsed.tags    || tags;
+  } catch {}
+
+  const item = { id: Date.now(), title, summary, tags, raw: raw.substring(0,1000), note: note||'', date: new Date().toLocaleDateString('pt-BR') };
+
+  // Salva local
+  const items = loadKnowledgeLocal();
+  items.unshift(item);
+  localStorage.setItem('yuki_knowledge', JSON.stringify(items.slice(0, 50)));
+
+  // Salva Firebase
+  if (fbReady && fbUid) {
+    try {
+      await window._fb.addDoc(
+        window._fb.collection(db, 'users', fbUid, 'knowledge'),
+        { ...item, createdAt: new Date().toISOString() }
+      );
+    } catch {}
+  }
+  return item;
 }
 
-// ── CATEGORIAS DE NOTÍCIAS ────────────────────────────────────────────────
-function loadNewsCats()   { try { return JSON.parse(localStorage.getItem(STORAGE_NEWS_CATS)) || ['geral']; } catch { return ['geral']; } }
-function saveNewsCats(c)  { localStorage.setItem(STORAGE_NEWS_CATS, JSON.stringify(c)); }
-
-// ── FETCH RSS ─────────────────────────────────────────────────────────────
-async function fetchRSS(category) {
-  try {
-    const feed = RSS_FEEDS[category];
-    const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url));
-    const data = await res.json();
-    const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
-    return Array.from(xml.querySelectorAll('item')).slice(0, MAX_NEWS_PER_CAT).map(item => ({
-      title:  item.querySelector('title')?.textContent?.trim() || 'Sem título',
-      source: feed.label
-    }));
-  } catch(e) { return []; }
+function loadKnowledgeLocal() {
+  try { return JSON.parse(localStorage.getItem('yuki_knowledge')) || []; } catch { return []; }
 }
 
-// ── CARREGAR NOTÍCIAS ─────────────────────────────────────────────────────
-async function loadNews() {
-  const cats = loadNewsCats();
+async function getRelevantKnowledge(msg) {
+  const items = loadKnowledgeLocal();
+  if (!items.length) return '';
+  const words = msg.toLowerCase().split(' ').filter(w => w.length > 3);
+  const scored = items.map(item => {
+    const hay = `${item.title} ${item.summary} ${(item.tags||[]).join(' ')}`.toLowerCase();
+    const score = words.filter(w => hay.includes(w)).length;
+    return { ...item, score };
+  }).filter(i => i.score > 0).sort((a,b) => b.score - a.score).slice(0, 3);
+  if (!scored.length) return '';
+  const block = scored.map(i => `[${i.date} — ${i.title}]\n${i.summary}`).join('\n\n');
+  return `\n\n---\nCONHECIMENTO RELEVANTE:\n${block}\n---`;
+}
 
-  // Desktop
-  const scroll  = document.getElementById('newsScroll');
-  const loading = document.getElementById('newsLoading');
-  if (scroll && loading) {
-    scroll.innerHTML = '';
-    loading.style.display = 'flex';
-    scroll.appendChild(loading);
+async function deleteKnowledge(id) {
+  const items = loadKnowledgeLocal().filter(i => i.id != id);
+  localStorage.setItem('yuki_knowledge', JSON.stringify(items));
+  renderKnowledge();
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUANTUM CANVAS
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('qcanvas');
+const ctx    = canvas.getContext('2d');
+let W, H, particles = [], arcs = [], appState = 'idle', frame = 0;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  particles = initParticles();
+  arcs      = initArcs();
+}
+
+function initParticles() {
+  const count = Math.floor((W * H) / 9000);
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random()-.5)*.5, vy: (Math.random()-.5)*.5,
+    r: Math.random()*1.4+.5,
+    pulse: Math.random()*Math.PI*2,
+    pulseSpeed: .015 + Math.random()*.025,
+    layer: Math.floor(Math.random()*3),
+  }));
+}
+
+function initArcs() {
+  return Array.from({ length: 6 }, (_, i) => ({
+    rx: 80+i*28+Math.random()*18, ry: 28+i*11+Math.random()*8,
+    dotPos: Math.random()*Math.PI*2,
+    dotSpeed: (.02+Math.random()*.03)*(Math.random()>.5?1:-1),
+    alpha: .05+Math.random()*.1,
+  }));
+}
+
+const STATE_PARAMS = {
+  idle:      { speed:1.0, dist:100, r:0,   g:140, b:210 },
+  listening: { speed:2.2, dist:130, r:0,   g:200, b:255 },
+  thinking:  { speed:3.0, dist:150, r:160, g:0,   b:255 },
+  speaking:  { speed:2.8, dist:160, r:0,   g:255, b:180 },
+};
+
+function drawCanvas() {
+  ctx.clearRect(0,0,W,H);
+  const p = STATE_PARAMS[appState];
+  frame++;
+
+  // Arcos orbitais
+  arcs.forEach(arc => {
+    arc.dotPos += arc.dotSpeed * p.speed;
+    ctx.save(); ctx.translate(W/2, H/2);
+    ctx.beginPath();
+    ctx.ellipse(0,0,arc.rx,arc.ry,0,0,Math.PI*2);
+    ctx.strokeStyle = `rgba(${p.r},${p.g},${p.b},${arc.alpha})`;
+    ctx.lineWidth = .5; ctx.stroke();
+    const dx = Math.cos(arc.dotPos)*arc.rx, dy = Math.sin(arc.dotPos)*arc.ry;
+    ctx.beginPath(); ctx.arc(dx,dy,2.2,0,Math.PI*2);
+    ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},.8)`; ctx.fill();
+    ctx.restore();
+  });
+
+  // Update particulas
+  particles.forEach(pt => {
+    pt.x += pt.vx*p.speed*(1+pt.layer*.3);
+    pt.y += pt.vy*p.speed*(1+pt.layer*.3);
+    pt.pulse += pt.pulseSpeed*p.speed;
+    if(pt.x<0||pt.x>W) pt.vx*=-1;
+    if(pt.y<0||pt.y>H) pt.vy*=-1;
+  });
+
+  // Conexoes
+  for(let i=0;i<particles.length;i++) {
+    for(let j=i+1;j<particles.length;j++) {
+      const a=particles[i],b=particles[j];
+      if(Math.abs(a.layer-b.layer)>1) continue;
+      const dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<p.dist) {
+        const alpha=(1-d/p.dist)*.22;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y);
+        const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+        ctx.quadraticCurveTo(mx,my,b.x,b.y);
+        ctx.strokeStyle=`rgba(${p.r},${p.g},${p.b},${alpha})`;
+        ctx.lineWidth=.4; ctx.stroke();
+      }
+    }
   }
 
-  // Mobile
-  const carousel = document.getElementById('newsCarousel');
-  if (carousel) {
-    carousel.innerHTML = '<div class="news-loading"><span></span><span></span><span></span></div>';
-  }
+  // Pontos
+  particles.forEach(pt => {
+    const pulse=Math.sin(pt.pulse)*.5+.5;
+    const alpha=(0.2+pulse*.6)*(0.4+pt.layer*.3);
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r+pulse*1.3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${p.r},${p.g},${p.b},${alpha})`; ctx.fill();
+  });
 
-  if (!cats.length) {
-    if (scroll)   scroll.innerHTML = '<div class="news-empty">Nenhuma categoria.<br>Configure em ⚙ CFG.</div>';
-    if (carousel) carousel.innerHTML = '<div class="news-card" style="color:var(--text-dim);font-size:.6rem;width:180px">Configure categorias em ⚙ CFG</div>';
+  // Halo central
+  const haloR=110+Math.sin(frame*.02)*12;
+  const grad=ctx.createRadialGradient(W/2,H/2,30,W/2,H/2,haloR);
+  grad.addColorStop(0,`rgba(${p.r},${p.g},${p.b},.06)`);
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(W/2,H/2,haloR,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+
+  requestAnimationFrame(drawCanvas);
+}
+
+window.addEventListener('resize', resize);
+resize(); drawCanvas();
+
+// ═══════════════════════════════════════════════════════════
+// ESTADO YUKI
+// ═══════════════════════════════════════════════════════════
+const nucleus = document.getElementById('nucleus');
+const sDot    = document.getElementById('sDot');
+const sText   = document.getElementById('sText');
+
+const STATE_UI = {
+  idle:      { cls:'',         status:'◈ AGUARDANDO' },
+  listening: { cls:'listening',status:'◉ OUVINDO...' },
+  thinking:  { cls:'thinking', status:'⟳ PROCESSANDO' },
+  speaking:  { cls:'speaking', status:'▶ FALANDO' },
+};
+
+function setYukiState(s) {
+  appState = s;
+  const u = STATE_UI[s];
+  nucleus.className = 'nucleus ' + u.cls;
+  sText.textContent = u.status;
+  sDot.className  = 's-dot ' + (s!=='idle'?'on':'');
+  sText.className = 's-text '+ (s!=='idle'?'on':'');
+  if(s!=='idle') setCascade(true);
+  else setTimeout(()=>setCascade(false),2000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// KITT
+// ═══════════════════════════════════════════════════════════
+const N=36;
+['kb1','kb2','kb3','kb4'].forEach(id=>{
+  const bar=document.getElementById(id);
+  for(let i=0;i<N;i++){const s=document.createElement('div');s.className='kitt-seg';bar.appendChild(s);}
+});
+let kMode='idle',kPos=18,kDir=1;
+function animKitt(){
+  const bars=[1,2,3,4].map(i=>document.getElementById('kb'+i).children);
+  [1,2,3,4].forEach(i=>{const b=bars[i-1];for(let j=0;j<N;j++)b[j].className='kitt-seg';});
+  if(kMode==='idle'){
+    kPos+=kDir*.8; if(kPos>=N-3||kPos<=0)kDir*=-1;
+    const p=Math.floor(kPos);
+    for(let i=0;i<3;i++){const idx=p+i;if(idx>=0&&idx<N)bars[0][idx].className='kitt-seg on'+(i===1?' peak':'');}
+  } else if(kMode==='active'){
+    kPos+=kDir*2.5; if(kPos>=N-5||kPos<=0)kDir*=-1;
+    bars.forEach((b,ri)=>{const w=Math.max(2,5-ri);for(let i=0;i<w;i++){const idx=Math.floor(kPos-ri*1.5+i);if(idx>=0&&idx<N)b[idx].className='kitt-seg on'+(i===Math.floor(w/2)?' peak':'');}});
+  } else {
+    const c=Math.floor(N/2)+Math.floor((Math.random()-.5)*18);
+    const sp=4+Math.floor(Math.random()*12);
+    [bars[0],bars[1],bars[2]].forEach((b,ri)=>{const s=Math.max(2,sp-ri*2);for(let i=0;i<s;i++){const idx=c-Math.floor(s/2)+i;if(idx>=0&&idx<N)b[idx].className='kitt-seg on'+(i===Math.floor(s/2)?' peak':'');}});
+  }
+  requestAnimationFrame(animKitt);
+}
+animKitt();
+function setCascade(on){['kr2','kr3','kr4'].forEach(id=>document.getElementById(id).classList.toggle('visible',on));}
+
+// ═══════════════════════════════════════════════════════════
+// CLOCK + WEATHER
+// ═══════════════════════════════════════════════════════════
+function updateClock(){
+  const now=new Date();
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const s=String(now.getSeconds()).padStart(2,'0');
+  const days=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const months=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  const dateStr=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()];
+  const weekStr=days[now.getDay()]+' · '+now.getFullYear();
+  document.getElementById('clockVal').textContent=h+':'+m;
+  document.getElementById('clockSec').textContent=':'+s;
+  document.getElementById('dateVal').textContent=dateStr;
+  document.getElementById('weekVal').textContent=weekStr;
+  document.getElementById('mClockVal').textContent=h+':'+m;
+  document.getElementById('mDateVal').textContent=dateStr;
+  document.getElementById('mWeekVal').textContent=weekStr;
+}
+updateClock(); setInterval(updateClock,1000);
+
+async function fetchWeather(){
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.78&longitude=-47.93&current=temperature_2m,weathercode&timezone=America%2FSao_Paulo');
+    const d=await r.json();
+    const temp=Math.round(d.current.temperature_2m);
+    const code=d.current.weathercode;
+    const descs={0:'Céu limpo',1:'Poucas nuvens',2:'Parc. nublado',3:'Nublado',45:'Neblina',51:'Garoa leve',61:'Chuva leve',63:'Chuva moderada',65:'Chuva forte',80:'Pancadas',95:'Tempestade'};
+    const desc=descs[code]||'Variável';
+    const cls='info-value '+(temp>=30?'temp-hot':temp>=22?'temp-warm':'');
+    document.getElementById('tempVal').textContent=temp+'°';
+    document.getElementById('tempVal').className=cls;
+    document.getElementById('tempDesc').textContent='Brasília · DF';
+    document.getElementById('weatherDesc').textContent=desc;
+    document.getElementById('mTempVal').textContent=temp+'°';
+    document.getElementById('mWeatherDesc').textContent=desc;
+  }catch{
+    document.getElementById('tempVal').textContent='--°';
+    document.getElementById('mTempVal').textContent='--°';
+  }
+}
+fetchWeather(); setInterval(fetchWeather,5*60*1000);
+
+// ═══════════════════════════════════════════════════════════
+// VOZ
+// ═══════════════════════════════════════════════════════════
+function getVoiceSettings(type){
+  if(type==='robotic')   return{rate:1.05,pitch:.7,gender:'female'};
+  if(type==='masculine') return{rate:1.0,pitch:.85,gender:'male'};
+  return{rate:1.0,pitch:1.1,gender:'female'};
+}
+function pickVoice(gender){
+  const voices=speechSynthesis.getVoices();
+  if(gender==='female')
+    return voices.find(v=>v.lang.startsWith('pt')&&/vitoria|luciana|francisca|female/i.test(v.name))
+        ||voices.find(v=>v.lang.startsWith('pt-BR'))
+        ||voices.find(v=>v.lang.startsWith('pt'));
+  return voices.find(v=>v.lang.startsWith('pt')&&/daniel|ricardo|male/i.test(v.name))
+      ||voices.find(v=>v.lang.startsWith('pt-BR')&&!/vitoria|luciana|francisca/i.test(v.name))
+      ||voices.find(v=>v.lang.startsWith('pt-BR'))
+      ||voices.find(v=>v.lang.startsWith('pt'));
+}
+function speakReply(text,voiceType,onDone){
+  if(!('speechSynthesis' in window)){onDone&&onDone();return;}
+  speechSynthesis.cancel();
+  const s=getVoiceSettings(voiceType);
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='pt-BR';u.rate=s.rate;u.pitch=s.pitch;u.volume=1;
+  const v=pickVoice(s.gender);if(v)u.voice=v;
+  u.onend=()=>{onDone&&onDone();};
+  speechSynthesis.speak(u);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYSTEM PROMPT
+// ═══════════════════════════════════════════════════════════
+function buildSysPrompt(prof, memBlock, knowBlock){
+  const now=new Date();
+  const weekdays=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const months=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dateStr=`${weekdays[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+  const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  return `Você é Yuki (雪), parceira pessoal de ${prof.name} (${prof.age} anos).
+Data atual: ${dateStr}. Hora: ${timeStr}.
+REGRAS ABSOLUTAS:
+- Chame sempre de "${prof.name}"
+- Responda SEMPRE em português brasileiro
+- Seja EXTREMAMENTE direta — sem "claro!", sem "ótima pergunta"
+- Respostas curtas são melhores que longas
+- Você não é uma ferramenta — é uma parceira, uma colega de conversa
+- Nunca quebre o personagem${memBlock}${knowBlock}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════════
+const msgsEl  = document.getElementById('chatMessages');
+const inputEl = document.getElementById('chatInput');
+const thinkEl = document.getElementById('thinking');
+
+let history=[], currentProfile=null, msgCount=0, responseMode='text';
+
+function addMsg(text,isUser){
+  const d=document.createElement('div');
+  d.className='msg '+(isUser?'msg-user':'msg-yuki');
+  const label=isUser?`${(currentProfile?.name||'VOCÊ').toUpperCase()} ›`:'◈ YUKI 雪';
+  d.innerHTML=`<div class="msg-label">${label}</div><div class="msg-bubble">${text}</div>`;
+  msgsEl.appendChild(d);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+async function send(text){
+  if(!text?.trim()||!currentProfile) return;
+  inputEl.value='';
+  addMsg(text,true);
+  setYukiState('thinking');
+  kMode='active';
+  thinkEl.classList.add('on');
+  history.push({role:'user',content:text});
+
+  const memBlock = await (async()=>{
+    const fichas=await loadFichas();
+    if(!fichas.length) return '';
+    const blocos=fichas.map(f=>`[${f.data}]\n${f.resumo}`).join('\n\n');
+    return `\n\n---\nMEMÓRIA DE CONVERSAS ANTERIORES:\n${blocos}\n---`;
+  })();
+
+  const knowBlock = await getRelevantKnowledge(text);
+
+  try{
+    const res=await fetch(PROXY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[
+        {role:'system',content:buildSysPrompt(currentProfile,memBlock,knowBlock)},
+        ...history
+      ]})
+    });
+    const data=await res.json();
+    const reply=data?.choices?.[0]?.message?.content||data?.error?.message||'Erro na resposta.';
+    history.push({role:'assistant',content:reply});
+    await saveHistory(history);
+    msgCount++;
+    if(msgCount>=MSGS_FICHA){msgCount=0;gerarFicha();}
+    thinkEl.classList.remove('on');
+    if(responseMode!=='voice') addMsg(reply,false);
+    if(responseMode!=='text'){
+      setYukiState('speaking'); kMode='talking';
+      speakReply(reply,currentProfile.voice||'robotic',()=>{setYukiState('idle');kMode='idle';});
+    } else {
+      setYukiState('idle'); kMode='idle';
+    }
+  }catch{
+    thinkEl.classList.remove('on');
+    addMsg('Falha na conexão. Tente novamente.',false);
+    setYukiState('idle'); kMode='idle';
+  }
+}
+
+async function gerarFicha(){
+  try{
+    const content=history.slice(-MSGS_FICHA).map(m=>`${m.role==='user'?currentProfile.name:'Yuki'}: ${m.content}`).join('\n');
+    const res=await fetch(PROXY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[
+        {role:'system',content:'Gere uma ficha de memória concisa em português com: tópicos discutidos, decisões tomadas, ações pendentes e informações importantes sobre o usuário. Máximo 300 palavras. Seja direto.'},
+        {role:'user',content:`Conversa:\n\n${content}`}
+      ]})
+    });
+    const data=await res.json();
+    const resumo=data?.choices?.[0]?.message?.content;
+    if(resumo) await saveFicha(resumo);
+  }catch{}
+}
+
+async function initChat(prof){
+  currentProfile=prof;
+  document.getElementById('bootGreet').textContent=`▸ OLÁ, ${prof.name.toUpperCase()} ◈`;
+  const saved=await loadHistory();
+  if(saved.length>0){
+    history=saved;
+    msgCount=saved.filter(m=>m.role==='user').length%MSGS_FICHA;
+    saved.forEach(m=>{if(m.role==='user'||m.role==='assistant')addMsg(m.content,m.role==='user');});
+  } else {
+    const welcome=`Sistema online. Olá, ${prof.name} — estou aqui. Como posso ajudá-lo?`;
+    history=[{role:'assistant',content:welcome}];
+    addMsg(welcome,false);
+    await saveHistory(history);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// KNOWLEDGE UI
+// ═══════════════════════════════════════════════════════════
+function renderKnowledge(){
+  const list=document.getElementById('knowList');
+  const items=loadKnowledgeLocal();
+  if(!items.length){
+    list.innerHTML='<div class="know-empty">Nenhum conhecimento salvo ainda.<br><br>Cole um texto abaixo ou diga<br>"Yuki, guarda isso" no chat.</div>';
     return;
   }
-
-  const results = await Promise.all(cats.map(async cat => ({ cat, items: await fetchRSS(cat) })));
-
-  // Preencher desktop
-  if (scroll) {
-    scroll.innerHTML = '';
-    let hasAny = false;
-    results.forEach(({ cat, items }) => {
-      if (!items.length) return;
-      hasAny = true;
-      const lbl = document.createElement('div');
-      lbl.className = 'news-cat-label';
-      lbl.textContent = RSS_FEEDS[cat].label;
-      scroll.appendChild(lbl);
-      items.forEach(item => {
-        const el = document.createElement('div');
-        el.className = 'news-item';
-        el.innerHTML = `<div class="news-item-title">${item.title}</div><div class="news-item-src">${item.source}</div>`;
-        el.addEventListener('click', () => send(`Me fale mais sobre esta notícia: "${item.title}"`));
-        scroll.appendChild(el);
-      });
-    });
-    if (!hasAny) scroll.innerHTML = '<div class="news-empty">Sem notícias no momento.</div>';
-  }
-
-  // Preencher mobile
-  if (carousel) {
-    carousel.innerHTML = '';
-    let hasCards = false;
-    results.forEach(({ cat, items }) => {
-      items.forEach(item => {
-        hasCards = true;
-        const card = document.createElement('div');
-        card.className = 'news-card';
-        card.innerHTML = `<div class="news-card-cat">${RSS_FEEDS[cat].label}</div><div class="news-card-title">${item.title}</div>`;
-        card.addEventListener('click', () => send(`Me fale mais sobre esta notícia: "${item.title}"`));
-        carousel.appendChild(card);
-      });
-    });
-    if (!hasCards) carousel.innerHTML = '<div class="news-card" style="color:var(--text-dim);font-size:.6rem;width:180px">Sem notícias no momento</div>';
-  }
-}
-
-// ── VOZ ───────────────────────────────────────────────────────────────────
-function getVoiceSettings(type) {
-  if (type==='robotic')   return { rate:1.05, pitch:0.7,  gender:'female' };
-  if (type==='masculine') return { rate:1.0,  pitch:0.85, gender:'male'   };
-  return                         { rate:1.0,  pitch:1.1,  gender:'female' };
-}
-function pickVoice(gender) {
-  const voices = speechSynthesis.getVoices();
-  if (gender==='female') {
-    return voices.find(v=>v.lang.startsWith('pt')&&/vitoria|luciana|francisca|female/i.test(v.name))
-        || voices.find(v=>v.lang.startsWith('pt-BR'))
-        || voices.find(v=>v.lang.startsWith('pt'));
-  }
-  return voices.find(v=>v.lang.startsWith('pt')&&/daniel|ricardo|male/i.test(v.name))
-      || voices.find(v=>v.lang.startsWith('pt-BR')&&!/vitoria|luciana|francisca/i.test(v.name))
-      || voices.find(v=>v.lang.startsWith('pt-BR'))
-      || voices.find(v=>v.lang.startsWith('pt'));
-}
-function testVoice(type) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const s = getVoiceSettings(type);
-  const u = new SpeechSynthesisUtterance('Olá, eu sou a Yuki.');
-  u.lang='pt-BR'; u.rate=s.rate; u.pitch=s.pitch; u.volume=1;
-  const trySpeak = () => { const v=pickVoice(s.gender); if(v) u.voice=v; speechSynthesis.speak(u); };
-  if (speechSynthesis.getVoices().length) trySpeak();
-  else speechSynthesis.onvoiceschanged = trySpeak;
-}
-function speakReply(text, voiceType) {
-  if (!('speechSynthesis' in window)) return false;
-  speechSynthesis.cancel();
-  const s = getVoiceSettings(voiceType);
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang='pt-BR'; u.rate=s.rate; u.pitch=s.pitch; u.volume=1;
-  const v = pickVoice(s.gender); if(v) u.voice=v;
-  u.onend = () => { mode='idle'; setCascade(false); };
-  speechSynthesis.speak(u);
-  return true;
-}
-
-// ── HELPERS VOICE OPTIONS ─────────────────────────────────────────────────
-function setupVoiceOptions(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.querySelectorAll('.voice-option').forEach(opt => {
-    const testBtn = opt.querySelector('.voice-test-btn');
-    opt.addEventListener('click', e => {
-      if (e.target===testBtn) return;
-      container.querySelectorAll('.voice-option').forEach(o=>o.classList.remove('selected'));
-      opt.classList.add('selected');
-      opt.querySelector('input[type=radio]').checked = true;
-    });
-    if (testBtn) testBtn.addEventListener('click', e => { e.stopPropagation(); testVoice(opt.dataset.voice); });
-  });
-}
-function getSelectedVoice(containerId) {
-  const container = document.getElementById(containerId);
-  const sel = container?.querySelector('.voice-option.selected');
-  return sel ? sel.dataset.voice : 'robotic';
-}
-function setSelectedVoice(containerId, voiceType) {
-  document.getElementById(containerId)?.querySelectorAll('.voice-option').forEach(opt => {
-    opt.classList.toggle('selected', opt.dataset.voice===voiceType);
-    opt.querySelector('input[type=radio]').checked = (opt.dataset.voice===voiceType);
+  list.innerHTML='';
+  items.forEach(item=>{
+    const el=document.createElement('div');
+    el.className='know-item';
+    el.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="know-item-title">${item.title}</div>
+        <button class="know-item-del" onclick="deleteKnowledge(${item.id})">✕</button>
+      </div>
+      <div class="know-item-summary">${item.summary}</div>
+      ${item.tags?.length?`<div class="know-item-tags">${item.tags.map(t=>`<div class="know-tag">${t}</div>`).join('')}</div>`:''}
+      <div style="font-size:.42rem;color:rgba(58,106,138,.4);letter-spacing:.1em;margin-top:4px">${item.date}${item.note?' · "'+item.note+'"':''}</div>
+    `;
+    list.appendChild(el);
   });
 }
 
-// ── HELPERS NEWS CATS ─────────────────────────────────────────────────────
-function setupNewsCatOptions() {
-  const saved = loadNewsCats();
-  document.getElementById('settingsNewsCategories')?.querySelectorAll('.news-cat-option').forEach(opt => {
-    opt.classList.toggle('selected', saved.includes(opt.dataset.cat));
-    opt.addEventListener('click', () => opt.classList.toggle('selected'));
-  });
-}
-function getSelectedNewsCats() {
-  return Array.from(document.getElementById('settingsNewsCategories')?.querySelectorAll('.news-cat-option.selected') || []).map(o=>o.dataset.cat);
+// Detecta "guarda isso" no chat
+function checkGuardaIsso(text){
+  const lower=text.toLowerCase();
+  return lower.includes('guarda isso')||lower.includes('salva isso')||lower.includes('anota isso');
 }
 
-// ── BOOT ──────────────────────────────────────────────────────────────────
-const profile = loadProfile();
-if (profile) {
-  document.getElementById('bootGreet').textContent = `▸ OLÁ, ${profile.name.toUpperCase()} ◈`;
-}
-setTimeout(() => {
-  document.getElementById('bootOverlay').classList.add('fade');
-  if (!profile) {
-    setTimeout(() => document.getElementById('onboardOverlay').classList.remove('hidden'), 400);
-  }
-}, 2800);
-
-// ── ONBOARDING ────────────────────────────────────────────────────────────
-setupVoiceOptions('onboardVoiceOptions');
-document.getElementById('onboardBtn').addEventListener('click', finishOnboard);
-document.getElementById('onboardAge').addEventListener('keypress', e => { if(e.key==='Enter') finishOnboard(); });
-
-function finishOnboard() {
-  const name = document.getElementById('onboardName').value.trim();
-  const age  = parseInt(document.getElementById('onboardAge').value);
-  if (!name) { document.getElementById('onboardName').focus(); return; }
-  if (!age||age<1||age>120) { document.getElementById('onboardAge').focus(); return; }
-  const voice = getSelectedVoice('onboardVoiceOptions');
-  const newProfile = { name, age, voice };
-  saveProfile(newProfile);
-  const overlay = document.getElementById('onboardOverlay');
-  overlay.classList.add('fade');
-  setTimeout(() => overlay.classList.add('hidden'), 700);
-  initChat(newProfile);
-}
-
-// ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────
-setupVoiceOptions('settingsVoiceOptions');
-document.getElementById('cfgBtn').addEventListener('click', openSettings);
-document.getElementById('settingsClose').addEventListener('click', closeSettings);
-document.getElementById('settingsOverlay').addEventListener('click', e => {
-  if (e.target===document.getElementById('settingsOverlay')) closeSettings();
-});
-document.getElementById('settingsSave').addEventListener('click', saveSettings);
-
-function openSettings() {
-  const p = loadProfile();
-  if (p) {
-    document.getElementById('settingsProfileInfo').textContent = `${p.name} · ${p.age} anos`;
-    setSelectedVoice('settingsVoiceOptions', p.voice||'robotic');
-  }
-  setupNewsCatOptions();
-  document.getElementById('settingsOverlay').classList.add('open');
-}
-function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
-function saveSettings() {
-  const p = loadProfile();
-  if (!p) return;
-  p.voice = getSelectedVoice('settingsVoiceOptions');
-  saveProfile(p);
-  currentProfile = p;
-  saveNewsCats(getSelectedNewsCats());
-  closeSettings();
-  loadNews();
-}
-
-// ── CLOCK ─────────────────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('clockVal').textContent = h+':'+m;
-  document.getElementById('clockSec').textContent = ':'+s;
-  const days   = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
-  const months = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-  document.getElementById('dateVal').textContent = String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()];
-  document.getElementById('weekVal').textContent = days[now.getDay()]+' · '+now.getFullYear();
-}
-updateClock(); setInterval(updateClock, 1000);
-
-// ── WEATHER ───────────────────────────────────────────────────────────────
-async function fetchWeather() {
-  try {
-    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.78&longitude=-47.93&current=temperature_2m,weathercode&timezone=America%2FSao_Paulo');
-    const d = await r.json();
-    const temp = Math.round(d.current.temperature_2m);
-    const code = d.current.weathercode;
-    const el = document.getElementById('tempVal');
-    el.textContent = temp+'°';
-    el.className = 'info-value '+(temp>=30?'temp-hot':temp>=22?'temp-warm':'');
-    const descs = {0:'Céu limpo',1:'Poucas nuvens',2:'Parc. nublado',3:'Nublado',45:'Neblina',51:'Garoa leve',61:'Chuva leve',63:'Chuva moderada',65:'Chuva forte',80:'Pancadas',95:'Tempestade'};
-    document.getElementById('weatherDesc').textContent = descs[code]||'Variável';
-  } catch(e) {
-    document.getElementById('tempVal').textContent = '--°';
-    document.getElementById('weatherDesc').textContent = 'Sem sinal';
-  }
-}
-fetchWeather(); setInterval(fetchWeather, 5*60*1000);
-
-// ── KITT ──────────────────────────────────────────────────────────────────
-const N = 40;
-['kittBar1','kittBar2','kittBar3','kittBar4'].forEach(id => {
-  const bar = document.getElementById(id);
-  for (let i=0;i<N;i++) { const s=document.createElement('div'); s.className='kitt-seg'; bar.appendChild(s); }
-});
-let mode='idle', pos=20, dir=1;
-function animateKitt() {
-  const bars = [1,2,3,4].map(i=>document.getElementById('kittBar'+i).children);
-  [1,2,3,4].forEach(i=>{ const b=bars[i-1]; for(let j=0;j<N;j++) b[j].className='kitt-seg'; });
-  if (mode==='idle') {
-    pos+=dir*1; if(pos>=N-3||pos<=0) dir*=-1;
-    const p=Math.floor(pos);
-    for(let i=0;i<3;i++){ const idx=p+i; if(idx>=0&&idx<N) bars[0][idx].className='kitt-seg on'+(i===1?' peak':''); }
-  } else if (mode==='active') {
-    pos+=dir*3; if(pos>=N-6||pos<=0) dir*=-1;
-    bars.forEach((b,ri)=>{ const w=Math.max(2,6-ri*1.5); for(let i=0;i<w;i++){ const idx=Math.floor(pos-ri*2+i); if(idx>=0&&idx<N) b[idx].className='kitt-seg on'+(i===Math.floor(w/2)?' peak':''); } });
-  } else {
-    const c=Math.floor(N/2)+Math.floor((Math.random()-.5)*20);
-    const sp=4+Math.floor(Math.random()*14);
-    [bars[0],bars[1],bars[2]].forEach((b,ri)=>{ const s=Math.max(2,sp-ri*3); for(let i=0;i<s;i++){ const idx=c-Math.floor(s/2)+i; if(idx>=0&&idx<N) b[idx].className='kitt-seg on'+(i===Math.floor(s/2)?' peak':''); } });
-  }
-  requestAnimationFrame(animateKitt);
-}
-animateKitt();
-function setCascade(on) {
-  ['kittRow2','kittRow3','kittRow4'].forEach(id=>document.getElementById(id).classList.toggle('visible',on));
-}
-
-// ── CHAT ──────────────────────────────────────────────────────────────────
-const msgs  = document.getElementById('chatMessages');
-const input = document.getElementById('chatInput');
-const think = document.getElementById('thinking');
-let history = [];
-let currentProfile = null;
-let msgCountSinceLastFicha = 0;
-
-function buildSysPrompt(prof) {
-  return `Você é Yuki (雪), assistente pessoal de ${prof.name} (${prof.age} anos).
-REGRAS ABSOLUTAS:
-- Chame o usuário sempre de "${prof.name}"
-- Responda SEMPRE em português brasileiro
-- Seja EXTREMAMENTE direta e objetiva — sem introduções, sem "claro!", sem "ótima pergunta"
-- Se perguntarem uma data, responda só a data. Se perguntarem um nome, responda só o nome
-- Só explique se ${prof.name} pedir explicitamente
-- Respostas curtas são melhores que longas
-- Nunca quebre o personagem${buildMemoryBlock()}`;
-}
-
-function addMsg(text, isUser) {
-  const d = document.createElement('div');
-  d.className = 'msg '+(isUser?'msg-user':'msg-yuki');
-  const label = isUser ? `${(currentProfile?.name||'USUÁRIO').toUpperCase()} ›` : '◈ YUKI 雪';
-  d.innerHTML = `<div class="msg-label">${label}</div><div class="msg-bubble">${text}</div>`;
-  msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function renderSavedHistory(hist) {
-  msgs.innerHTML = '';
-  hist.forEach(m => { if(m.role==='user'||m.role==='assistant') addMsg(m.content, m.role==='user'); });
-}
-
-function initChat(prof) {
-  currentProfile = prof;
-  document.getElementById('bootGreet').textContent = `▸ OLÁ, ${prof.name.toUpperCase()} ◈`;
-  const saved = loadHistory();
-  if (saved.length > 0) {
-    history = saved;
-    msgCountSinceLastFicha = saved.filter(m=>m.role==='user').length % MSGS_POR_FICHA;
-    renderSavedHistory(saved);
-  } else {
-    const welcome = `Sistema online. Olá, ${prof.name} — estou aqui. Como posso ajudá-lo?`;
-    history = [{role:'assistant', content:welcome}];
-    msgs.innerHTML = '';
-    addMsg(welcome, false);
-    saveHistory(history);
-  }
-}
-
-async function send(text) {
-  if (!text.trim()) return;
-  if (!currentProfile) return;
-  addMsg(text, true); input.value='';
-  mode='active'; setCascade(true); think.classList.add('on');
-  history.push({role:'user', content:text});
-  try {
-    const res = await fetch(PROXY, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ messages:[{role:'system',content:buildSysPrompt(currentProfile)}, ...history] })
-    });
-    const data = await res.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.error?.message || 'Erro na resposta.';
-    history.push({role:'assistant', content:reply});
-    saveHistory(history);
-    msgCountSinceLastFicha++;
-    if (msgCountSinceLastFicha >= MSGS_POR_FICHA) {
-      msgCountSinceLastFicha = 0;
-      gerarFichaDeResumo(history, currentProfile);
-    }
-    think.classList.remove('on');
-    if (responseMode !== 'voice') addMsg(reply, false);
-    if (responseMode !== 'text') {
-      mode='talking';
-      const voiced = speakReply(reply, currentProfile.voice||'robotic');
-      if (!voiced) setTimeout(()=>{mode='idle';setCascade(false);},3000);
+// ═══════════════════════════════════════════════════════════
+// BOOT + ONBOARDING
+// ═══════════════════════════════════════════════════════════
+async function boot(){
+  await initFirebase();
+  const prof=await loadProfile();
+  if(prof) document.getElementById('bootGreet').textContent=`▸ OLÁ, ${prof.name.toUpperCase()} ◈`;
+  setTimeout(async()=>{
+    document.getElementById('boot').classList.add('fade');
+    if(!prof){
+      setTimeout(()=>document.getElementById('onboard').classList.remove('hide'),400);
     } else {
-      setTimeout(()=>{mode='idle';setCascade(false);},3000);
+      await initChat(prof);
     }
-  } catch(e) {
-    think.classList.remove('on');
-    addMsg('Falha na conexão. Tente novamente.', false);
-    mode='idle'; setCascade(false);
-  }
+  },2800);
 }
+boot();
 
-// ── INICIALIZAÇÃO ─────────────────────────────────────────────────────────
-if (profile) initChat(profile);
-loadNews();
+document.getElementById('obBtn').addEventListener('click',async()=>{
+  const name=document.getElementById('obName').value.trim();
+  const age=parseInt(document.getElementById('obAge').value);
+  if(!name||!age||age<1||age>120) return;
+  const prof={name,age,voice:'robotic'};
+  await saveProfile(prof);
+  document.getElementById('onboard').classList.add('hide');
+  await initChat(prof);
+});
+document.getElementById('obAge').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('obBtn').click();});
 
-// ── RESPONSE MODE ─────────────────────────────────────────────────────────
-let responseMode = 'text';
-const modeBtns = {
-  text:      document.getElementById('modeText'),
-  voicetext: document.getElementById('modeVoiceText'),
-  voice:     document.getElementById('modeVoice')
-};
-Object.entries(modeBtns).forEach(([key,btn]) => {
-  function setMode() {
-    responseMode = key;
-    Object.values(modeBtns).forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('cfgBtn').addEventListener('click',()=>{
+  const p=currentProfile;
+  if(p){
+    document.getElementById('cfgProfileInfo').textContent=`${p.name} · ${p.age} anos`;
+    document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(b=>{
+      b.classList.toggle('sel',b.dataset.voice===(p.voice||'robotic'));
+    });
+    const fichas=loadKnowledgeLocal();
+    document.getElementById('cfgMemInfo').textContent=`${fichas.length} conhecimento(s) salvo(s) · ${fbReady?'Firebase ativo':'Apenas local'}`;
   }
-  btn.addEventListener('click', setMode);
-  btn.addEventListener('touchend', e=>{ e.preventDefault(); setMode(); });
+  document.getElementById('cfgOverlay').classList.add('open');
+});
+document.getElementById('cfgClose').addEventListener('click',()=>document.getElementById('cfgOverlay').classList.remove('open'));
+document.getElementById('cfgOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('cfgOverlay'))document.getElementById('cfgOverlay').classList.remove('open');});
+document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+});
+document.getElementById('cfgSave').addEventListener('click',async()=>{
+  const p=currentProfile; if(!p) return;
+  const sel=document.querySelector('#cfgVoiceRow .cfg-btn-sm.sel');
+  if(sel) p.voice=sel.dataset.voice;
+  await saveProfile(p); currentProfile=p;
+  document.getElementById('cfgOverlay').classList.remove('open');
+});
+document.getElementById('cfgViewKnow').addEventListener('click',()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  renderKnowledge();
+  document.getElementById('knowOverlay').classList.add('open');
 });
 
-// ── SEND / MIC ────────────────────────────────────────────────────────────
-const sendBtn = document.getElementById('sendBtn');
-function handleSend() { send(input.value); }
-sendBtn.addEventListener('click', handleSend);
-sendBtn.addEventListener('touchend', e=>{ e.preventDefault(); handleSend(); });
-input.addEventListener('keypress', e=>{ if(e.key==='Enter') send(input.value); });
+// ═══════════════════════════════════════════════════════════
+// KNOWLEDGE PANEL
+// ═══════════════════════════════════════════════════════════
+document.getElementById('knowBtn').addEventListener('click',()=>{
+  renderKnowledge();
+  document.getElementById('knowOverlay').classList.add('open');
+});
+document.getElementById('knowClose').addEventListener('click',()=>document.getElementById('knowOverlay').classList.remove('open'));
+document.getElementById('knowSaveBtn').addEventListener('click',async()=>{
+  const text=document.getElementById('knowInput').value.trim();
+  if(!text) return;
+  document.getElementById('knowSaveBtn').textContent='SALVANDO...';
+  await saveKnowledge(text,'salvo manualmente');
+  document.getElementById('knowInput').value='';
+  document.getElementById('knowSaveBtn').textContent='GUARDAR';
+  renderKnowledge();
+});
+document.getElementById('knowInput').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('knowSaveBtn').click();});
 
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const micBtn = document.getElementById('micBtn');
-if (SR) {
-  const rec = new SR(); rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=false;
-  rec.onresult = e=>{ send(e.results[0][0].transcript); micBtn.classList.remove('mic-on'); };
-  rec.onend = ()=>micBtn.classList.remove('mic-on');
-  function toggleMic() {
-    if(micBtn.classList.contains('mic-on')) rec.stop();
-    else { rec.start(); micBtn.classList.add('mic-on'); }
+// ═══════════════════════════════════════════════════════════
+// SEND / MIC / MODES
+// ═══════════════════════════════════════════════════════════
+const sendBtn=document.getElementById('sendBtn');
+const micBtn =document.getElementById('micBtn');
+
+function handleSend(){send(inputEl.value);}
+sendBtn.addEventListener('click',handleSend);
+sendBtn.addEventListener('touchend',e=>{e.preventDefault();handleSend();});
+inputEl.addEventListener('keypress',async e=>{
+  if(e.key==='Enter'){
+    const text=inputEl.value.trim();
+    // Detecta "guarda isso"
+    if(checkGuardaIsso(text)){
+      const last=history.filter(m=>m.role==='user').slice(-2,-1)[0]?.content||'';
+      if(last){
+        inputEl.value='';
+        addMsg(text,true);
+        addMsg('Guardando... um momento.',false);
+        await saveKnowledge(last,'guarda isso');
+        addMsg('Guardado! Já sei disso.',false);
+        return;
+      }
+    }
+    send(text);
   }
-  micBtn.addEventListener('click', toggleMic);
-  micBtn.addEventListener('touchend', e=>{ e.preventDefault(); toggleMic(); });
+});
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const rec=new SR(); rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult=e=>{
+    const text=e.results[0][0].transcript;
+    micBtn.classList.remove('mic-on');
+    setYukiState('idle'); kMode='idle';
+    send(text);
+  };
+  rec.onend=()=>{micBtn.classList.remove('mic-on');};
+  function toggleMic(){
+    if(micBtn.classList.contains('mic-on')){rec.stop();}
+    else{rec.start();micBtn.classList.add('mic-on');setYukiState('listening');kMode='active';}
+  }
+  micBtn.addEventListener('click',toggleMic);
+  micBtn.addEventListener('touchend',e=>{e.preventDefault();toggleMic();});
 } else { micBtn.style.opacity='.3'; }
 
-// ── NEWS REFRESH BUTTONS ──────────────────────────────────────────────────
-document.getElementById('newsRefreshBtn')?.addEventListener('click', loadNews);
-document.getElementById('carouselRefreshBtn')?.addEventListener('click', loadNews);
+// Modes
+const modeMap={text:document.getElementById('modeText'),voicetext:document.getElementById('modeVT'),voice:document.getElementById('modeVoice')};
+Object.entries(modeMap).forEach(([key,btn])=>{
+  function setMode(){responseMode=key;Object.values(modeMap).forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  btn.addEventListener('click',setMode);
+  btn.addEventListener('touchend',e=>{e.preventDefault();setMode();});
+});
 </script>
-
 </body>
 </html>

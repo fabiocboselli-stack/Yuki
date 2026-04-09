@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000508">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Yuki">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Yuki">
+<meta name="description" content="Yuki — sua parceira pessoal de IA">
+<meta name="msapplication-TileColor" content="#000508">
+<meta name="msapplication-navbutton-color" content="#00aaff">
+<!-- Open Graph / Share -->
+<meta property="og:title" content="Yuki — Parceira IA">
+<meta property="og:description" content="Sistema de IA pessoal Yuki">
+<meta property="og:type" content="website">
+<title>Yuki</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
+:root{
+  --blue:#00aaff;--blue2:#00ccff;--dim:#3a6a8a;--bg:#000508;
+  --text:#a0d4f0;--glow:rgba(0,170,255,0.7);
+}
+body{font-family:'Share Tech Mono',monospace;background:var(--bg);color:var(--text);height:100vh;width:100vw;overflow:hidden}
+
+/* CANVAS */
+#qcanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+
+/* SCANLINE */
+.scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.12),transparent);animation:scan 5s linear infinite;pointer-events:none;z-index:2}
+@keyframes scan{from{top:0}to{top:100vh}}
+
+/* BOOT */
+.boot{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:opacity .8s}
+.boot.fade{opacity:0;pointer-events:none}
+.boot-logo{font-family:'Orbitron',sans-serif;font-size:3rem;font-weight:900;color:var(--blue);letter-spacing:.5em;animation:bootGlow .6s ease-in-out infinite alternate}
+@keyframes bootGlow{from{text-shadow:0 0 20px var(--glow)}to{text-shadow:0 0 60px var(--glow),0 0 100px rgba(0,170,255,.4)}}
+.boot-line{font-size:.6rem;letter-spacing:.2em;color:var(--dim);animation:bootIn .4s steps(1) forwards;opacity:0}
+.boot-line:nth-child(2){animation-delay:.3s}
+.boot-line:nth-child(3){animation-delay:.7s}
+.boot-line:nth-child(4){animation-delay:1.1s}
+.boot-line:nth-child(5){animation-delay:1.5s;color:var(--blue)}
+@keyframes bootIn{to{opacity:1}}
+.boot-bar{width:200px;height:2px;background:rgba(0,170,255,.1);margin-top:20px;overflow:hidden}
+.boot-bar-fill{height:100%;background:var(--blue);box-shadow:0 0 10px var(--glow);width:0;animation:bootFill 2s ease-out .3s forwards}
+@keyframes bootFill{to{width:100%}}
+
+/* ONBOARDING */
+.onboard{position:fixed;inset:0;background:var(--bg);z-index:800;display:flex;align-items:center;justify-content:center;transition:opacity .5s}
+.onboard.hide{opacity:0;pointer-events:none;display:none}
+.onboard-box{width:min(380px,92vw);padding:36px;border:1px solid rgba(0,170,255,.2);background:rgba(0,5,15,.9);display:flex;flex-direction:column;gap:22px;animation:fadeUp .5s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.ob-title{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:var(--blue);letter-spacing:.3em;text-shadow:0 0 20px var(--glow)}
+.ob-msg{font-size:.8rem;line-height:1.8;color:var(--text);letter-spacing:.03em}
+.ob-field{display:flex;flex-direction:column;gap:7px}
+.ob-label{font-size:.5rem;letter-spacing:.35em;color:var(--dim);text-transform:uppercase}
+.ob-input{background:transparent;border:none;border-bottom:1px solid rgba(0,170,255,.25);outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.9rem;padding:6px 2px;caret-color:var(--blue);transition:border-color .2s}
+.ob-input:focus{border-color:var(--blue)}
+.ob-input::placeholder{color:var(--dim);opacity:.4}
+.ob-btn{align-self:flex-end;background:transparent;border:1px solid rgba(0,170,255,.4);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.25em;padding:10px 24px;cursor:pointer;transition:all .2s}
+.ob-btn:hover{background:rgba(0,170,255,.12);box-shadow:0 0 16px rgba(0,170,255,.2)}
+
+/* SETTINGS */
+.cfg-overlay{position:fixed;inset:0;background:rgba(0,5,16,.88);z-index:700;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.cfg-overlay.open{opacity:1;pointer-events:all}
+.cfg-box{width:min(400px,94vw);border:1px solid rgba(0,170,255,.25);background:rgba(2,8,20,.97);padding:28px;display:flex;flex-direction:column;gap:16px;animation:fadeUp .3s ease-out;max-height:90vh;overflow-y:auto}
+.cfg-title{font-family:'Orbitron',sans-serif;font-size:.85rem;font-weight:700;color:var(--blue);letter-spacing:.3em;text-shadow:0 0 16px var(--glow)}
+.cfg-section-label{font-size:.48rem;letter-spacing:.35em;color:var(--dim);text-transform:uppercase;padding-bottom:5px;border-bottom:1px solid rgba(0,170,255,.07)}
+.cfg-info{font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+.cfg-row{display:flex;gap:8px;flex-wrap:wrap}
+.cfg-btn-sm{background:transparent;border:1px solid rgba(0,170,255,.2);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:5px 12px;cursor:pointer;transition:all .2s}
+.cfg-btn-sm.sel,.cfg-btn-sm:hover{border-color:var(--blue);color:var(--blue);box-shadow:0 0 8px rgba(0,170,255,.15)}
+.cfg-save{align-self:flex-end;background:transparent;border:1px solid rgba(0,170,255,.4);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.25em;padding:8px 20px;cursor:pointer;transition:all .2s}
+.cfg-save:hover{background:rgba(0,170,255,.1)}
+.cfg-close{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:4px 10px;cursor:pointer;transition:all .2s}
+.cfg-close:hover{border-color:var(--blue);color:var(--blue)}
+.cfg-danger{border-color:rgba(255,60,60,.3)!important;color:rgba(255,60,60,.6)!important}
+.cfg-danger:hover{border-color:rgba(255,60,60,.8)!important;color:rgba(255,80,80,1)!important;box-shadow:0 0 8px rgba(255,0,0,.15)!important}
+
+/* INSTALL BANNER */
+.install-banner{position:fixed;bottom:0;left:0;right:0;background:rgba(0,20,40,.97);border-top:1px solid rgba(0,170,255,.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:850;transform:translateY(100%);transition:transform .4s ease-out}
+.install-banner.show{transform:translateY(0)}
+.install-banner-text{font-size:.65rem;letter-spacing:.1em;color:var(--text);line-height:1.6}
+.install-banner-text strong{color:var(--blue)}
+.install-banner-btns{display:flex;gap:8px;flex-shrink:0}
+.install-btn{background:rgba(0,170,255,.15);border:1px solid rgba(0,170,255,.5);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.2em;padding:7px 16px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.install-btn:hover{background:rgba(0,170,255,.25)}
+.install-dismiss{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.1em;padding:7px 12px;cursor:pointer}
+
+/* TOAST / NOTIFICACAO */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(0,20,40,.95);border:1px solid rgba(0,170,255,.3);padding:10px 20px;font-size:.65rem;letter-spacing:.12em;color:var(--blue);opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* KNOWLEDGE PANEL */
+.know-overlay{position:fixed;inset:0;background:rgba(0,5,16,.92);z-index:650;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s}
+.know-overlay.open{opacity:1;pointer-events:all}
+.know-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(0,170,255,.1)}
+.know-title{font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--blue);letter-spacing:.3em}
+.know-list{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.know-item{border:1px solid rgba(0,170,255,.1);padding:12px 14px;background:rgba(0,170,255,.02);display:flex;flex-direction:column;gap:6px}
+.know-item-title{font-size:.65rem;color:var(--blue);letter-spacing:.1em;font-weight:bold}
+.know-item-summary{font-size:.6rem;color:var(--dim);line-height:1.6}
+.know-item-tags{display:flex;gap:5px;flex-wrap:wrap}
+.know-tag{font-size:.48rem;color:var(--dim);border:1px solid rgba(0,170,255,.12);padding:2px 7px;letter-spacing:.1em}
+.know-item-del{align-self:flex-end;background:transparent;border:none;color:rgba(100,100,100,.4);cursor:pointer;font-size:.7rem}
+.know-empty{padding:40px 20px;text-align:center;font-size:.65rem;color:var(--dim);line-height:2}
+.know-input-row{display:flex;gap:8px;padding:14px 20px;border-top:1px solid rgba(0,170,255,.08)}
+.know-input{flex:1;background:transparent;border:none;border-bottom:1px solid rgba(0,170,255,.2);outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.8rem;padding:4px 2px;caret-color:var(--blue)}
+.know-input::placeholder{color:var(--dim);opacity:.4}
+
+/* OFFLINE BADGE */
+.offline-badge{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,100,0,.15);border:1px solid rgba(255,100,0,.4);color:rgba(255,150,50,.9);font-size:.5rem;letter-spacing:.2em;padding:4px 14px;z-index:980;display:none}
+.offline-badge.show{display:block}
+
+/* SCREEN */
+.screen{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10;display:flex;flex-direction:column;overflow:hidden}
+
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(0,170,255,.1);flex-shrink:0}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.3rem;color:var(--blue);letter-spacing:.4em;text-shadow:0 0 20px var(--glow),0 0 40px rgba(0,170,255,.3)}
+.top-right{display:flex;align-items:center;gap:10px}
+.sys-label{font-size:.5rem;color:var(--dim);letter-spacing:.2em}
+.top-btn{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:4px 10px;cursor:pointer;transition:all .2s}
+.top-btn:hover{border-color:var(--blue);color:var(--blue)}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--glow);animation:dp 2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.3s;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.6)}
+.dot:nth-child(3){animation-delay:.6s;background:#ffaa00;box-shadow:0 0 8px rgba(255,170,0,.6)}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* NUCLEUS AREA */
+.nucleus-area{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 0 8px;gap:8px}
+.nucleus-wrap{position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center}
+.n-ring{position:absolute;border-radius:50%;border:1px solid transparent}
+.n-ring-1{width:150px;height:150px;border-top-color:rgba(0,200,255,.4);border-right-color:rgba(0,200,255,.15);animation:spin 8s linear infinite}
+.n-ring-2{width:115px;height:115px;border-bottom-color:rgba(0,150,255,.35);border-left-color:rgba(0,150,255,.1);animation:spin 5s linear infinite reverse}
+.n-ring-3{width:80px;height:80px;border-top-color:rgba(100,200,255,.5);animation:spin 3s linear infinite}
+.n-ring-eq{width:150px;height:45px;border:1px solid rgba(0,180,255,.12);border-radius:50%;animation:spinEq 12s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spinEq{from{transform:rotateX(75deg) rotate(0deg)}to{transform:rotateX(75deg) rotate(360deg)}}
+.nucleus{width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#00ffff,#0088cc 45%,#001830 80%);box-shadow:0 0 0 2px rgba(0,200,255,.3),0 0 20px rgba(0,200,255,.8),0 0 50px rgba(0,150,255,.4),0 0 80px rgba(0,100,200,.2);animation:np 2.5s ease-in-out infinite;position:relative;z-index:5;transition:background .4s,box-shadow .4s}
+@keyframes np{0%,100%{transform:scale(1)}50%{transform:scale(1.07);box-shadow:0 0 0 3px rgba(0,220,255,.5),0 0 35px rgba(0,220,255,1),0 0 80px rgba(0,170,255,.6),0 0 130px rgba(0,120,220,.4)}}
+.nucleus.listening{background:radial-gradient(circle at 30% 30%,#00ffff,#0099ff 45%,#001840 80%);animation:nl .3s ease-in-out infinite alternate}
+@keyframes nl{from{transform:scale(1.05);box-shadow:0 0 0 3px rgba(0,220,255,.5),0 0 40px rgba(0,220,255,1),0 0 90px rgba(0,170,255,.7)}to{transform:scale(1.18);box-shadow:0 0 0 5px rgba(0,240,255,.7),0 0 70px rgba(0,240,255,1),0 0 140px rgba(0,200,255,.8)}}
+.nucleus.thinking{background:radial-gradient(circle at 30% 30%,#cc88ff,#6600cc 45%,#0a0018 80%);animation:nt .5s ease-in-out infinite alternate}
+@keyframes nt{from{box-shadow:0 0 0 2px rgba(150,0,255,.4),0 0 30px rgba(150,0,255,.8),0 0 70px rgba(120,0,220,.5)}to{box-shadow:0 0 0 4px rgba(180,50,255,.6),0 0 55px rgba(180,50,255,1),0 0 110px rgba(150,0,240,.7)}}
+.nucleus.speaking{background:radial-gradient(circle at 30% 30%,#aaffee,#00ccaa 45%,#001812 80%);animation:ns .15s ease-in-out infinite alternate}
+@keyframes ns{from{transform:scale(1.08);box-shadow:0 0 0 3px rgba(0,255,200,.4),0 0 35px rgba(0,255,180,.8),0 0 80px rgba(0,200,150,.5)}to{transform:scale(1.2);box-shadow:0 0 0 6px rgba(0,255,200,.7),0 0 65px rgba(0,255,180,1),0 0 130px rgba(0,220,160,.7)}}
+.nucleus-label{font-size:.45rem;letter-spacing:.5em;color:rgba(0,200,255,.45)}
+.status-bar{display:flex;align-items:center;gap:7px;font-size:.48rem;letter-spacing:.3em}
+.s-dot{width:5px;height:5px;border-radius:50%;background:var(--dim);transition:all .3s}
+.s-dot.on{background:var(--blue);box-shadow:0 0 8px rgba(0,200,255,.8)}
+.s-text{color:var(--dim);transition:color .3s}
+.s-text.on{color:var(--blue2)}
+
+/* CHAT */
+.chat-area{flex:1;display:flex;flex-direction:column;padding:0 16px;min-width:0;min-height:0;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:12px 0 8px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+.chat-messages::-webkit-scrollbar{width:2px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--dim)}
+.msg{display:flex;flex-direction:column;gap:3px;max-width:88%;animation:fadeUp .3s ease-out}
+.msg-label{font-size:.5rem;letter-spacing:.25em;color:var(--dim)}
+.msg-yuki .msg-label{color:var(--blue)}
+.msg-bubble{padding:9px 14px;font-size:.8rem;line-height:1.7;letter-spacing:.03em}
+.msg-yuki .msg-bubble{background:rgba(0,170,255,.05);border-left:2px solid var(--blue);color:#c8e8f8}
+.msg-user{align-self:flex-end;text-align:right}
+.msg-user .msg-label{text-align:right}
+.msg-user .msg-bubble{background:rgba(255,255,255,.02);border-left:none;border-right:1px solid var(--dim);color:var(--dim)}
+.thinking{display:none;gap:5px;align-items:center;padding:6px 0;opacity:.5}
+.thinking.on{display:flex}
+.thinking span{font-size:.6rem;letter-spacing:.2em;color:var(--blue);animation:tb 1.2s ease-in-out infinite}
+.thinking span:nth-child(2){animation-delay:.2s}
+.thinking span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,100%{opacity:.2}50%{opacity:1}}
+
+/* BOTTOM */
+.mode-row{display:flex;gap:5px;align-items:center;padding:6px 0;border-top:1px solid rgba(0,170,255,.07);margin-top:4px}
+.mode-lbl{font-size:.45rem;letter-spacing:.2em;color:var(--dim);flex-shrink:0}
+.mode-btn{background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.5rem;letter-spacing:.12em;padding:4px 9px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.mode-btn.active{background:rgba(0,170,255,.12);border-color:var(--blue);color:var(--blue);box-shadow:0 0 8px rgba(0,170,255,.15)}
+.input-row{display:flex;align-items:center;gap:8px;padding:10px 0 14px;border-top:1px solid rgba(0,170,255,.08)}
+.prompt{color:var(--blue);font-size:.9rem;flex-shrink:0;text-shadow:0 0 8px var(--glow)}
+.chat-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.82rem;letter-spacing:.04em;caret-color:var(--blue)}
+.chat-input::placeholder{color:var(--dim);opacity:.45}
+.btn{background:transparent;border:1px solid rgba(0,170,255,.25);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.15em;padding:7px 12px;cursor:pointer;transition:all .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.btn:hover,.btn:active{background:rgba(0,170,255,.1);border-color:var(--blue)}
+.btn.mic-on{background:rgba(0,170,255,.15);border-color:var(--blue);animation:micGlow 1s ease-in-out infinite}
+@keyframes micGlow{0%,100%{box-shadow:0 0 8px rgba(0,170,255,.3)}50%{box-shadow:0 0 20px rgba(0,170,255,.6)}}
+
+/* INFO PANEL */
+.info-panel{width:0;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:0;border-left:none;overflow:hidden;transition:all .3s}
+@media(min-width:600px){
+  .info-panel{width:180px;padding:16px 20px 16px 0;border-left:1px solid rgba(0,170,255,.07)}
+}
+.info-block{display:flex;flex-direction:column;gap:2px}
+.info-label{font-size:.45rem;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+.info-value{font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.4rem;color:var(--blue);text-shadow:0 0 15px var(--glow);line-height:1}
+.info-sub{font-size:.52rem;color:var(--dim);letter-spacing:.12em;margin-top:2px}
+.info-line{width:24px;height:1px;background:linear-gradient(90deg,var(--blue),transparent);margin-top:4px}
+.temp-hot{color:#ff6633!important;text-shadow:0 0 15px rgba(255,100,50,.6)!important}
+.temp-warm{color:#ffaa00!important;text-shadow:0 0 15px rgba(255,170,0,.6)!important}
+
+/* KITT */
+.kitt-section{flex-shrink:0;padding:0 16px 14px;display:flex;flex-direction:column;gap:4px}
+.kitt-label{font-size:.45rem;letter-spacing:.35em;color:var(--dim);margin-bottom:2px}
+.kitt-row{display:flex;align-items:center;gap:2px;height:12px}
+.kitt-bar{flex:1;height:100%;display:flex;gap:2px;align-items:center}
+.kitt-seg{flex:1;height:100%;background:rgba(0,100,180,.3);transition:background .05s,box-shadow .05s}
+.kitt-seg.on{background:var(--blue);box-shadow:0 0 8px var(--glow),0 0 16px rgba(0,170,255,.4)}
+.kitt-seg.on.peak{background:#aaeeff;box-shadow:0 0 12px #aaeeff,0 0 24px var(--glow)}
+.kitt-row.cascade{opacity:0;transform:scaleY(.3);transition:opacity .2s,transform .2s}
+.kitt-row.cascade.visible{opacity:.5;transform:scaleY(1)}
+.kitt-row.cascade.visible+.cascade.visible{opacity:.28}
+.kitt-row.cascade.visible+.cascade.visible+.cascade.visible{opacity:.1}
+
+/* MOBILE INFO ROW */
+.mobile-info{display:flex;gap:0;border-top:1px solid rgba(0,170,255,.07);flex-shrink:0}
+@media(min-width:600px){.mobile-info{display:none}}
+.mi-block{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-right:1px solid rgba(0,170,255,.06)}
+.mi-block:last-child{border-right:none}
+.mi-label{font-size:.4rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.mi-val{font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--blue);text-shadow:0 0 10px var(--glow)}
+.mi-sub{font-size:.38rem;color:var(--dim);letter-spacing:.08em}
+
+/* MEMORY STATUS */
+.mem-status{display:flex;align-items:center;gap:5px;font-size:.42rem;letter-spacing:.18em;color:var(--dim);padding:3px 0}
+.mem-dot{width:4px;height:4px;border-radius:50%;background:var(--dim)}
+.mem-dot.cloud{background:#00ff88;box-shadow:0 0 6px rgba(0,255,136,.6)}
+.mem-dot.local{background:#ffaa00;box-shadow:0 0 6px rgba(255,170,0,.5)}
+.mem-dot.offline{background:#ff4444;box-shadow:0 0 6px rgba(255,68,68,.5)}
+
+/* SHARE OVERLAY */
+.share-overlay{position:fixed;inset:0;background:rgba(0,5,16,.92);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.share-overlay.open{opacity:1;pointer-events:all}
+.share-box{width:min(380px,92vw);border:1px solid rgba(0,170,255,.25);background:rgba(2,8,20,.97);padding:28px;display:flex;flex-direction:column;gap:18px}
+.share-title{font-family:'Orbitron',sans-serif;font-size:.85rem;color:var(--blue);letter-spacing:.3em}
+.share-text{font-size:.75rem;color:var(--dim);line-height:1.8}
+.share-url{font-size:.6rem;color:var(--text);border:1px solid rgba(0,170,255,.15);padding:8px 12px;letter-spacing:.05em;word-break:break-all;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+<canvas id="qcanvas"></canvas>
+
+<!-- OFFLINE BADGE -->
+<div class="offline-badge" id="offlineBadge">◈ OFFLINE — USANDO CACHE</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-text">
+    <strong>◈ INSTALAR YUKI</strong><br>
+    Adicionar à tela inicial para acesso rápido
+  </div>
+  <div class="install-banner-btns">
+    <button class="install-btn" id="installBtn">INSTALAR ›</button>
+    <button class="install-dismiss" id="installDismiss">DEPOIS</button>
+  </div>
+</div>
+
+<!-- BOOT -->
+<div class="boot" id="boot">
+  <div class="boot-logo">YUKI</div>
+  <div class="boot-line">▸ SISTEMA INICIANDO...</div>
+  <div class="boot-line">▸ CONECTANDO AO NÚCLEO IA...</div>
+  <div class="boot-line">▸ CARREGANDO CONTEXTO...</div>
+  <div class="boot-line">▸ INTERFACE PRONTA</div>
+  <div class="boot-line" id="bootGreet">▸ OLÁ ◈</div>
+  <div class="boot-bar"><div class="boot-bar-fill"></div></div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="onboard hide" id="onboard">
+  <div class="onboard-box">
+    <div class="ob-title">◈ PRIMEIRO ACESSO</div>
+    <div class="ob-msg">Olá. Sou a Yuki — sua parceira pessoal.<br>Preciso de algumas informações para começar.</div>
+    <div class="ob-field">
+      <div class="ob-label">Como devo te chamar?</div>
+      <input class="ob-input" id="obName" type="text" placeholder="Seu nome..." autocomplete="off" maxlength="40">
+    </div>
+    <div class="ob-field">
+      <div class="ob-label">Sua idade</div>
+      <input class="ob-input" id="obAge" type="number" placeholder="Ex: 35" min="1" max="120">
+    </div>
+    <button class="ob-btn" id="obBtn">CONFIRMAR ›</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="cfg-overlay" id="cfgOverlay">
+  <div class="cfg-box">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="cfg-title">◈ CONFIGURAÇÕES</div>
+      <button class="cfg-close" id="cfgClose">FECHAR ✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Perfil</div>
+      <div class="cfg-info" id="cfgProfileInfo">—</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Voz da Yuki</div>
+      <div class="cfg-row" id="cfgVoiceRow">
+        <button class="cfg-btn-sm" data-voice="feminine">FEMININA</button>
+        <button class="cfg-btn-sm" data-voice="masculine">MASCULINA</button>
+        <button class="cfg-btn-sm sel" data-voice="robotic">ROBÓTICA</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Memória</div>
+      <div class="cfg-info" id="cfgMemInfo">—</div>
+      <button class="cfg-btn-sm" id="cfgViewKnow" style="align-self:flex-start">◈ VER O QUE YUKI SABE</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">PWA / Instalação</div>
+      <div class="cfg-info" id="cfgPwaInfo">—</div>
+      <div class="cfg-row">
+        <button class="cfg-btn-sm" id="cfgInstallBtn">◈ INSTALAR APP</button>
+        <button class="cfg-btn-sm" id="cfgShareBtn">◈ COMPARTILHAR</button>
+        <button class="cfg-btn-sm" id="cfgNotifBtn">◈ NOTIFICAÇÕES</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="cfg-section-label">Dados</div>
+      <div class="cfg-row">
+        <button class="cfg-btn-sm" id="cfgExportBtn">↓ EXPORTAR</button>
+        <button class="cfg-btn-sm" id="cfgImportBtn">↑ IMPORTAR</button>
+        <button class="cfg-btn-sm cfg-danger" id="cfgClearBtn">✕ LIMPAR TUDO</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+    </div>
+    <button class="cfg-save" id="cfgSave">SALVAR ›</button>
+  </div>
+</div>
+
+<!-- KNOWLEDGE PANEL -->
+<div class="know-overlay" id="knowOverlay">
+  <div class="know-header">
+    <div class="know-title">◈ O QUE YUKI SABE</div>
+    <button class="cfg-close" id="knowClose">FECHAR ✕</button>
+  </div>
+  <div class="know-list" id="knowList"></div>
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 20px 0;border-top:1px solid rgba(0,170,255,.08)">
+    <span style="font-size:.45rem;letter-spacing:.3em;color:var(--dim);flex-shrink:0">TÍTULO›</span>
+    <input class="know-input" id="knowTitleInput" placeholder="Nome para este conhecimento (opcional)..." style="font-size:.7rem">
+  </div>
+  <div class="know-input-row">
+    <span class="prompt" style="font-size:.8rem">›_</span>
+    <input class="know-input" id="knowInput" placeholder="Cole um texto para Yuki aprender...">
+    <button class="btn" id="knowSaveBtn">GUARDAR</button>
+  </div>
+</div>
+
+<!-- SHARE OVERLAY -->
+<div class="share-overlay" id="shareOverlay">
+  <div class="share-box">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div class="share-title">◈ COMPARTILHAR YUKI</div>
+      <button class="cfg-close" id="shareClose">✕</button>
+    </div>
+    <div class="share-text">Link para acessar a Yuki em qualquer dispositivo:</div>
+    <div class="share-url" id="shareUrl">—</div>
+    <div class="cfg-row">
+      <button class="cfg-btn-sm" id="shareCopyBtn">◈ COPIAR LINK</button>
+      <button class="cfg-btn-sm" id="shareNativeBtn">↗ COMPARTILHAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN -->
+<div class="screen">
+  <div class="top-bar">
+    <div class="logo">YUKI</div>
+    <div class="top-right">
+      <span class="sys-label" id="sysLabel">SISTEMA ATIVO ◈ V4.4</span>
+      <button class="top-btn" id="knowBtn">◈ SABE</button>
+      <button class="top-btn" id="cfgBtn">⚙ CFG</button>
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="chat-area">
+
+      <!-- Nucleus -->
+      <div class="nucleus-area">
+        <div class="nucleus-wrap">
+          <div class="n-ring n-ring-eq"></div>
+          <div class="n-ring n-ring-1"></div>
+          <div class="n-ring n-ring-2"></div>
+          <div class="n-ring n-ring-3"></div>
+          <div class="nucleus" id="nucleus"></div>
+        </div>
+        <div class="nucleus-label">幸 · Y U K I · 雪</div>
+        <div class="status-bar">
+          <div class="s-dot on" id="sDot"></div>
+          <div class="s-text on" id="sText">◈ AGUARDANDO</div>
+        </div>
+        <div class="mem-status">
+          <div class="mem-dot" id="memDot"></div>
+          <span id="memLabel">MEM: LOCAL</span>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="thinking" id="thinking"><span>▸</span><span>▸</span><span>▸</span></div>
+
+      <div class="mode-row">
+        <span class="mode-lbl">SAÍDA›</span>
+        <button class="mode-btn active" id="modeText">TEXTO</button>
+        <button class="mode-btn" id="modeVT">VOZ+TEXTO</button>
+        <button class="mode-btn" id="modeVoice">SÓ VOZ</button>
+      </div>
+
+      <div class="input-row">
+        <span class="prompt">›_</span>
+        <input class="chat-input" id="chatInput" type="text" placeholder="Fale com a Yuki..." autocomplete="off">
+        <button class="btn" id="micBtn">MIC</button>
+        <button class="btn" id="sendBtn">ENVIAR</button>
+      </div>
+    </div>
+
+    <!-- INFO PANEL DESKTOP -->
+    <div class="info-panel">
+      <div class="info-block">
+        <div class="info-label">Horário</div>
+        <div class="info-value" id="clockVal">--:--</div>
+        <div class="info-sub" id="clockSec">:--</div>
+        <div class="info-line"></div>
+      </div>
+      <div class="info-block">
+        <div class="info-label">Data</div>
+        <div class="info-value" style="font-size:.9rem" id="dateVal">---</div>
+        <div class="info-sub" id="weekVal">---</div>
+        <div class="info-line"></div>
+      </div>
+      <div class="info-block">
+        <div class="info-label">Temperatura</div>
+        <div class="info-value" id="tempVal">--°</div>
+        <div class="info-sub" id="tempDesc">Brasília · DF</div>
+        <div class="info-line"></div>
+      </div>
+      <div class="info-block">
+        <div class="info-label">Condição</div>
+        <div class="info-sub" id="weatherDesc" style="font-size:.65rem;color:var(--text);line-height:1.6">—</div>
+        <div class="info-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO MOBILE -->
+  <div class="mobile-info">
+    <div class="mi-block">
+      <div class="mi-label">Hora</div>
+      <div class="mi-val" id="mClockVal">--:--</div>
+    </div>
+    <div class="mi-block">
+      <div class="mi-label">Data</div>
+      <div class="mi-val" style="font-size:.65rem" id="mDateVal">---</div>
+      <div class="mi-sub" id="mWeekVal">---</div>
+    </div>
+    <div class="mi-block">
+      <div class="mi-label">Temp</div>
+      <div class="mi-val" id="mTempVal">--°</div>
+      <div class="mi-sub" id="mWeatherDesc">—</div>
+    </div>
+  </div>
+
+  <!-- KITT -->
+  <div class="kitt-section">
+    <div class="kitt-label">◈ ANÁLISE DE VOZ</div>
+    <div class="kitt-row" id="kr1"><div class="kitt-bar" id="kb1"></div></div>
+    <div class="kitt-row cascade" id="kr2"><div class="kitt-bar" id="kb2"></div></div>
+    <div class="kitt-row cascade" id="kr3"><div class="kitt-bar" id="kb3"></div></div>
+    <div class="kitt-row cascade" id="kr4" style="height:8px"><div class="kitt-bar" id="kb4"></div></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG — GROQ via Cloudflare Worker + KV Memory
+// ═══════════════════════════════════════════════════════════
+const PROXY       = 'https://yuki-proxy.fabiocboselli.workers.dev/';
+const MEM_UID     = 'fabio-yuki';
+const MAX_HISTORY = 8;
+const MSGS_FICHA  = 10;
+const MAX_FICHAS  = 5;
+const APP_VERSION = 'V4.5-KV';
+
+// ═══════════════════════════════════════════════════════════
+// PWA — MANIFEST INLINE (injeta via <link> dinâmico)
+// ═══════════════════════════════════════════════════════════
+(function injectManifest() {
+  const manifest = {
+    name: "Yuki — Parceira IA",
+    short_name: "Yuki",
+    description: "Sistema de IA pessoal Yuki",
+    start_url: "./yuki.html",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#000508",
+    theme_color: "#000508",
+    lang: "pt-BR",
+    categories: ["productivity", "utilities"],
+    icons: [
+      {
+        src: "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#000508"/><circle cx="256" cy="256" r="180" fill="none" stroke="#00aaff" stroke-width="2" opacity="0.4"/><circle cx="256" cy="256" r="130" fill="none" stroke="#00ccff" stroke-width="1.5" opacity="0.3"/><circle cx="256" cy="256" r="80" fill="none" stroke="#00aaff" stroke-width="1" opacity="0.5"/><circle cx="256" cy="256" r="40" fill="url(#g)" filter="url(#glow)"/><defs><radialGradient id="g" cx="35%" cy="35%"><stop offset="0%" stop-color="#00ffff"/><stop offset="45%" stop-color="#0088cc"/><stop offset="100%" stop-color="#001830"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><text x="256" y="370" font-family="serif" font-size="72" fill="#00aaff" text-anchor="middle" opacity="0.7">&#x5E78;</text></svg>`))),
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }
+    ],
+    shortcuts: [
+      {
+        name: "Conversar com Yuki",
+        short_name: "Conversar",
+        description: "Abrir chat direto",
+        url: "./yuki.html#chat",
+        icons: [{ src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIwIDJINGMtMS4xIDAtMiAuOS0yIDJ2MThhMiAyIDAgMDAzIDEuNzNMMTIgMjBsNyAzVjRjMC0xLjEtLjktMi0yLTJ6IiBmaWxsPSIjMDBhYWZmIi8+PC9zdmc+", sizes: "96x96" }]
+      }
+    ],
+    screenshots: [],
+    prefer_related_applications: false
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+})();
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE / ONLINE DETECTION
+// ═══════════════════════════════════════════════════════════
+function updateOnlineStatus() {
+  const badge = document.getElementById('offlineBadge');
+  if (!navigator.onLine) {
+    badge.classList.add('show');
+    updateMemStatus(false, true);
+  } else {
+    badge.classList.remove('show');
+    if (kvReady) updateMemStatus(true);
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ═══════════════════════════════════════════════════════════
+// INSTALL PROMPT (beforeinstallprompt)
+// ═══════════════════════════════════════════════════════════
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Mostra banner após 5s se não instalado
+  setTimeout(() => {
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+      document.getElementById('installBanner').classList.add('show');
+    }
+  }, 5000);
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) { showToast('Instale manualmente: Menu do browser › Adicionar à tela inicial'); return; }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+  if (outcome === 'accepted') showToast('◈ Yuki instalada com sucesso!');
+});
+
+document.getElementById('installDismiss').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  showToast('◈ Yuki instalada!');
+  deferredPrompt = null;
+});
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICAÇÕES PUSH
+// ═══════════════════════════════════════════════════════════
+async function requestNotifications() {
+  if (!('Notification' in window)) { showToast('Notificações não suportadas neste browser'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    showToast('◈ Notificações ativadas!');
+    // Envia notificação de teste
+    setTimeout(() => {
+      new Notification('Yuki ◈', { body: 'Notificações ativas — estou aqui quando precisar.', icon: '' });
+    }, 1000);
+  } else {
+    showToast('Permissão de notificação negada');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════════════════
+async function shareApp() {
+  const url = window.location.href;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Yuki — Parceira IA', text: 'Acesse a Yuki:', url });
+      return;
+    } catch {}
+  }
+  document.getElementById('shareUrl').textContent = url;
+  document.getElementById('shareOverlay').classList.add('open');
+}
+
+document.getElementById('shareClose').addEventListener('click', () => {
+  document.getElementById('shareOverlay').classList.remove('open');
+});
+document.getElementById('shareCopyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(window.location.href)
+    .then(() => { showToast('◈ Link copiado!'); document.getElementById('shareOverlay').classList.remove('open'); })
+    .catch(() => showToast('Copie o link manualmente'));
+});
+document.getElementById('shareNativeBtn').addEventListener('click', async () => {
+  document.getElementById('shareOverlay').classList.remove('open');
+  await shareApp();
+});
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT / IMPORT / CLEAR
+// ═══════════════════════════════════════════════════════════
+function exportData() {
+  const data = {
+    version: APP_VERSION,
+    exported: new Date().toISOString(),
+    profile:   JSON.parse(localStorage.getItem('yuki_profile') || 'null'),
+    history:   JSON.parse(localStorage.getItem('yuki_history') || '[]'),
+    memory:    JSON.parse(localStorage.getItem('yuki_memory')  || '[]'),
+    knowledge: JSON.parse(localStorage.getItem('yuki_knowledge') || '[]'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `yuki-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('◈ Backup exportado!');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.profile)   localStorage.setItem('yuki_profile',   JSON.stringify(data.profile));
+      if (data.history)   localStorage.setItem('yuki_history',   JSON.stringify(data.history));
+      if (data.memory)    localStorage.setItem('yuki_memory',    JSON.stringify(data.memory));
+      if (data.knowledge) localStorage.setItem('yuki_knowledge', JSON.stringify(data.knowledge));
+      showToast('◈ Dados importados — recarregando...');
+      setTimeout(() => location.reload(), 1500);
+    } catch { showToast('Erro ao importar — arquivo inválido'); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (!confirm('Apagar TODOS os dados da Yuki? Esta ação é irreversível.')) return;
+  ['yuki_profile','yuki_history','yuki_memory','yuki_knowledge'].forEach(k => localStorage.removeItem(k));
+  showToast('◈ Dados apagados — recarregando...');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// KV MEMORY — Cloudflare KV via Worker
+// ═══════════════════════════════════════════════════════════
+let kvReady = false;
+
+async function kvGet(key) {
+  try {
+    const r = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mem_get', uid: MEM_UID, key })
+    });
+    const d = await r.json();
+    return d.value || null;
+  } catch { return null; }
+}
+
+async function kvSet(key, value) {
+  try {
+    await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mem_set', uid: MEM_UID, key, value })
+    });
+    return true;
+  } catch { return false; }
+}
+
+async function kvDel(key) {
+  try {
+    await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mem_del', uid: MEM_UID, key })
+    });
+  } catch {}
+}
+
+async function initKV() {
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')), 4000));
+    await Promise.race([kvSet('ping', 'ok'), timeout]);
+    kvReady = true;
+    updateMemStatus(true);
+    console.log('KV OK — uid:', MEM_UID);
+  } catch(e) {
+    console.warn('KV indisponível — usando localStorage:', e.message);
+    updateMemStatus(false);
+  }
+}
+
+function updateMemStatus(cloud, offline=false) {
+  const dot = document.getElementById('memDot');
+  const lbl = document.getElementById('memLabel');
+  if (offline) { dot.className='mem-dot offline'; lbl.textContent='MEM: OFFLINE'; return; }
+  dot.className = 'mem-dot ' + (cloud ? 'cloud' : 'local');
+  lbl.textContent = cloud ? 'MEM: NUVEM ◈' : 'MEM: LOCAL';
+}
+
+// ═══════════════════════════════════════════════════════════
+// STORAGE — KV com fallback para localStorage
+// ═══════════════════════════════════════════════════════════
+
+async function loadProfile() {
+  const kv = await kvGet('profile');
+  if (kv) return kv;
+  try { return JSON.parse(localStorage.getItem('yuki_profile')) || null; } catch { return null; }
+}
+async function saveProfile(p) {
+  localStorage.setItem('yuki_profile', JSON.stringify(p));
+  await kvSet('profile', p);
+}
+
+async function loadHistory() {
+  const kv = await kvGet('history');
+  if (kv) return kv;
+  try { return JSON.parse(localStorage.getItem('yuki_history')) || []; } catch { return []; }
+}
+async function saveHistory(h) {
+  const sliced = h.slice(-MAX_HISTORY);
+  localStorage.setItem('yuki_history', JSON.stringify(sliced));
+  await kvSet('history', sliced);
+}
+
+async function loadFichas() {
+  const kv = await kvGet('fichas');
+  if (kv) return kv;
+  try { return JSON.parse(localStorage.getItem('yuki_memory')) || []; } catch { return []; }
+}
+async function saveFicha(resumo) {
+  const date = new Date().toLocaleDateString('pt-BR');
+  const ficha = { id: Date.now(), data: date, resumo };
+  const fichas = await loadFichas();
+  fichas.push(ficha);
+  const sliced = fichas.slice(-MAX_FICHAS);
+  localStorage.setItem('yuki_memory', JSON.stringify(sliced));
+  await kvSet('fichas', sliced);
+}
+
+async function saveKnowledge(raw, note, manualTitle='') {
+  let summary = raw.length > 300 ? raw.substring(0, 300) : raw;
+  let title = manualTitle || 'Conhecimento salvo';
+  let tags = [];
+  try {
+    const res = await fetch(PROXY, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'chat', messages: [
+        { role: 'system', content: 'Extraia informacoes importantes. Responda APENAS JSON valido sem markdown: {"title":"titulo curto","summary":"resumo 2-3 frases","tags":["tag1","tag2"]}' },
+        { role: 'user', content: `${note ? 'Nota do usuario: ' + note + '\n\n' : ''}Conteudo:\n${raw}` }
+      ]})
+    });
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    summary = parsed.summary || summary;
+    // Só usa título gerado pela IA se o usuário não digitou um
+    if (!manualTitle) title = parsed.title || title;
+    tags    = parsed.tags    || tags;
+  } catch {}
+
+  // Guarda raw COMPLETO (sem truncar) — usado para leitura real pela Yuki
+  const item = { id: Date.now(), title, summary, tags, raw: raw, note: note||'', date: new Date().toLocaleDateString('pt-BR') };
+  const items = loadKnowledgeLocal();
+  items.unshift(item);
+  const sliced = items.slice(0, 50);
+  localStorage.setItem('yuki_knowledge', JSON.stringify(sliced));
+  await kvSet('knowledge', sliced);
+  return item;
+}
+
+function loadKnowledgeLocal() {
+  try { return JSON.parse(localStorage.getItem('yuki_knowledge')) || []; } catch { return []; }
+}
+
+// Detecta se a mensagem é um pedido EXPLÍCITO sobre conhecimento guardado
+function isKnowledgeRequest(msg) {
+  const lower = msg.toLowerCase();
+  const triggers = [
+    'o que você sabe','o que voce sabe',
+    'lista o que','lista seus','lista as memo','lista os conhe',
+    'listar memo','listar conhe',
+    'abre ','abra ','lê ','le ','ler ','leia ',
+    'resume ','resumir ','resumo de ',
+    'fala sobre ','fale sobre ',
+    'me conta sobre','me fala sobre',
+    'o que tem guardado','o que esta guardado','o que está guardado',
+    'busca na memo','busca no conhe',
+    'procura na memo','acessa a memo',
+    'guarda isso','salva isso','anota isso'
+  ];
+  return triggers.some(t => lower.includes(t));
+}
+
+// Resposta 100% LOCAL para pedidos de listagem — zero Groq
+function getKnowledgeListLocal() {
+  const items = loadKnowledgeLocal();
+  if (!items.length) return '◈ Nenhum conhecimento guardado ainda.';
+  const lista = items.map((it,i) => `${i+1}. ${it.title} [${it.date}]`).join('\n');
+  return `◈ CONTEÚDO GUARDADO (${items.length} item${items.length>1?'s':''}):\n\n${lista}\n\nPara ler um item, diga: "lê o [título]"`;
+}
+
+// Busca item pelo título para exibição local
+function findKnowledgeByTitle(msg) {
+  const items = loadKnowledgeLocal();
+  if (!items.length) return null;
+  const msgLower = msg.toLowerCase();
+  // Busca exata pelo título primeiro
+  let found = items.find(it => msgLower.includes(it.title.toLowerCase()));
+  // Se não achou, busca parcial por palavras do título
+  if (!found) {
+    found = items.find(it => {
+      const words = it.title.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+      return words.some(w => msgLower.includes(w));
+    });
+  }
+  return found || null;
+}
+
+// Verifica se é pedido de LEITURA/ABERTURA (resposta local, sem Groq)
+function isReadRequest(msg) {
+  const lower = msg.toLowerCase();
+  return ['abre ','abra ','lê ','le ','ler ','leia ','mostra ','mostrar ','exibe ','ver '].some(t => lower.includes(t));
+}
+
+// Verifica se é pedido de RESUMO/ANÁLISE (precisa do Groq, mas só com o item específico)
+function isSummaryRequest(msg) {
+  const lower = msg.toLowerCase();
+  return ['resume ','resumir ','resumo ','analisa ','analisar ','comente ','comentar ','fala sobre','fale sobre','me conta sobre'].some(t => lower.includes(t));
+}
+
+// Para chamadas ao Groq que envolvem conhecimento: só injeta o item específico pedido
+async function getKnowledgeForGroq(msg) {
+  const item = findKnowledgeByTitle(msg);
+  if (!item) return '';
+  const rawPreview = item.raw ? item.raw.substring(0, 2000) + (item.raw.length > 2000 ? '\n[continua...]' : '') : item.summary;
+  return `\n\n---\nCONTEÚDO SOLICITADO — "${item.title}" [${item.date}]:\n${rawPreview}\n---`;
+}
+
+async function deleteKnowledge(id) {
+  const items = loadKnowledgeLocal().filter(i => i.id != id);
+  localStorage.setItem('yuki_knowledge', JSON.stringify(items));
+  await kvSet('knowledge', items);
+  renderKnowledge();
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUANTUM CANVAS
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('qcanvas');
+const ctx    = canvas.getContext('2d');
+let W, H, particles = [], arcs = [], appState = 'idle', frame = 0;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  particles = initParticles();
+  arcs      = initArcs();
+}
+
+function initParticles() {
+  const count = Math.floor((W * H) / 9000);
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    vx: (Math.random()-.5)*.5, vy: (Math.random()-.5)*.5,
+    r: Math.random()*1.4+.5,
+    pulse: Math.random()*Math.PI*2,
+    pulseSpeed: .015 + Math.random()*.025,
+    layer: Math.floor(Math.random()*3),
+  }));
+}
+
+function initArcs() {
+  return Array.from({ length: 6 }, (_, i) => ({
+    rx: 80+i*28+Math.random()*18, ry: 28+i*11+Math.random()*8,
+    dotPos: Math.random()*Math.PI*2,
+    dotSpeed: (.02+Math.random()*.03)*(Math.random()>.5?1:-1),
+    alpha: .05+Math.random()*.1,
+  }));
+}
+
+const STATE_PARAMS = {
+  idle:      { speed:1.0, dist:100, r:0,   g:140, b:210 },
+  listening: { speed:2.2, dist:130, r:0,   g:200, b:255 },
+  thinking:  { speed:3.0, dist:150, r:160, g:0,   b:255 },
+  speaking:  { speed:2.8, dist:160, r:0,   g:255, b:180 },
+};
+
+function drawCanvas() {
+  ctx.clearRect(0,0,W,H);
+  const p = STATE_PARAMS[appState];
+  frame++;
+
+  arcs.forEach(arc => {
+    arc.dotPos += arc.dotSpeed * p.speed;
+    ctx.save(); ctx.translate(W/2, H/2);
+    ctx.beginPath();
+    ctx.ellipse(0,0,arc.rx,arc.ry,0,0,Math.PI*2);
+    ctx.strokeStyle = `rgba(${p.r},${p.g},${p.b},${arc.alpha})`;
+    ctx.lineWidth = .5; ctx.stroke();
+    const dx = Math.cos(arc.dotPos)*arc.rx, dy = Math.sin(arc.dotPos)*arc.ry;
+    ctx.beginPath(); ctx.arc(dx,dy,2.2,0,Math.PI*2);
+    ctx.fillStyle = `rgba(${p.r},${p.g},${p.b},.8)`; ctx.fill();
+    ctx.restore();
+  });
+
+  particles.forEach(pt => {
+    pt.x += pt.vx*p.speed*(1+pt.layer*.3);
+    pt.y += pt.vy*p.speed*(1+pt.layer*.3);
+    pt.pulse += pt.pulseSpeed*p.speed;
+    if(pt.x<0||pt.x>W) pt.vx*=-1;
+    if(pt.y<0||pt.y>H) pt.vy*=-1;
+  });
+
+  for(let i=0;i<particles.length;i++) {
+    for(let j=i+1;j<particles.length;j++) {
+      const a=particles[i],b=particles[j];
+      if(Math.abs(a.layer-b.layer)>1) continue;
+      const dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<p.dist) {
+        const alpha=(1-d/p.dist)*.22;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y);
+        const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+        ctx.quadraticCurveTo(mx,my,b.x,b.y);
+        ctx.strokeStyle=`rgba(${p.r},${p.g},${p.b},${alpha})`;
+        ctx.lineWidth=.4; ctx.stroke();
+      }
+    }
+  }
+
+  particles.forEach(pt => {
+    const pulse=Math.sin(pt.pulse)*.5+.5;
+    const alpha=(0.2+pulse*.6)*(0.4+pt.layer*.3);
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r+pulse*1.3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${p.r},${p.g},${p.b},${alpha})`; ctx.fill();
+  });
+
+  const haloR=110+Math.sin(frame*.02)*12;
+  const grad=ctx.createRadialGradient(W/2,H/2,30,W/2,H/2,haloR);
+  grad.addColorStop(0,`rgba(${p.r},${p.g},${p.b},.06)`);
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(W/2,H/2,haloR,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+
+  requestAnimationFrame(drawCanvas);
+}
+
+window.addEventListener('resize', resize);
+resize(); drawCanvas();
+
+// ═══════════════════════════════════════════════════════════
+// ESTADO YUKI
+// ═══════════════════════════════════════════════════════════
+const nucleus = document.getElementById('nucleus');
+const sDot    = document.getElementById('sDot');
+const sText   = document.getElementById('sText');
+
+const STATE_UI = {
+  idle:      { cls:'',          status:'◈ AGUARDANDO' },
+  listening: { cls:'listening', status:'◉ OUVINDO...' },
+  thinking:  { cls:'thinking',  status:'⟳ PROCESSANDO' },
+  speaking:  { cls:'speaking',  status:'▶ FALANDO' },
+};
+
+function setYukiState(s) {
+  appState = s;
+  const u = STATE_UI[s];
+  nucleus.className = 'nucleus ' + u.cls;
+  sText.textContent = u.status;
+  sDot.className  = 's-dot ' + (s!=='idle'?'on':'');
+  sText.className = 's-text '+ (s!=='idle'?'on':'');
+  if(s!=='idle') setCascade(true);
+  else setTimeout(()=>setCascade(false),2000);
+
+  // App Badge API
+  if ('setAppBadge' in navigator) {
+    if (s === 'thinking' || s === 'listening') {
+      navigator.setAppBadge(1).catch(()=>{});
+    } else {
+      navigator.clearAppBadge().catch(()=>{});
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// KITT
+// ═══════════════════════════════════════════════════════════
+const N=36;
+['kb1','kb2','kb3','kb4'].forEach(id=>{
+  const bar=document.getElementById(id);
+  for(let i=0;i<N;i++){const s=document.createElement('div');s.className='kitt-seg';bar.appendChild(s);}
+});
+let kMode='idle',kPos=18,kDir=1;
+function animKitt(){
+  const bars=[1,2,3,4].map(i=>document.getElementById('kb'+i).children);
+  [1,2,3,4].forEach(i=>{const b=bars[i-1];for(let j=0;j<N;j++)b[j].className='kitt-seg';});
+  if(kMode==='idle'){
+    kPos+=kDir*.8; if(kPos>=N-3||kPos<=0)kDir*=-1;
+    const p=Math.floor(kPos);
+    for(let i=0;i<3;i++){const idx=p+i;if(idx>=0&&idx<N)bars[0][idx].className='kitt-seg on'+(i===1?' peak':'');}
+  } else if(kMode==='active'){
+    kPos+=kDir*2.5; if(kPos>=N-5||kPos<=0)kDir*=-1;
+    bars.forEach((b,ri)=>{const w=Math.max(2,5-ri);for(let i=0;i<w;i++){const idx=Math.floor(kPos-ri*1.5+i);if(idx>=0&&idx<N)b[idx].className='kitt-seg on'+(i===Math.floor(w/2)?' peak':'');}});
+  } else {
+    const c=Math.floor(N/2)+Math.floor((Math.random()-.5)*18);
+    const sp=4+Math.floor(Math.random()*12);
+    [bars[0],bars[1],bars[2]].forEach((b,ri)=>{const s=Math.max(2,sp-ri*2);for(let i=0;i<s;i++){const idx=c-Math.floor(s/2)+i;if(idx>=0&&idx<N)b[idx].className='kitt-seg on'+(i===Math.floor(s/2)?' peak':'');}});
+  }
+  requestAnimationFrame(animKitt);
+}
+animKitt();
+function setCascade(on){['kr2','kr3','kr4'].forEach(id=>document.getElementById(id).classList.toggle('visible',on));}
+
+// ═══════════════════════════════════════════════════════════
+// CLOCK + WEATHER
+// ═══════════════════════════════════════════════════════════
+function updateClock(){
+  const now=new Date();
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  const s=String(now.getSeconds()).padStart(2,'0');
+  const days=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const months=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  const dateStr=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()];
+  const weekStr=days[now.getDay()]+' · '+now.getFullYear();
+  document.getElementById('clockVal').textContent=h+':'+m;
+  document.getElementById('clockSec').textContent=':'+s;
+  document.getElementById('dateVal').textContent=dateStr;
+  document.getElementById('weekVal').textContent=weekStr;
+  document.getElementById('mClockVal').textContent=h+':'+m;
+  document.getElementById('mDateVal').textContent=dateStr;
+  document.getElementById('mWeekVal').textContent=weekStr;
+}
+updateClock(); setInterval(updateClock,1000);
+
+async function fetchWeather(){
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=-15.78&longitude=-47.93&current=temperature_2m,weathercode&timezone=America%2FSao_Paulo');
+    const d=await r.json();
+    const temp=Math.round(d.current.temperature_2m);
+    const code=d.current.weathercode;
+    const descs={0:'Céu limpo',1:'Poucas nuvens',2:'Parc. nublado',3:'Nublado',45:'Neblina',51:'Garoa leve',61:'Chuva leve',63:'Chuva moderada',65:'Chuva forte',80:'Pancadas',95:'Tempestade'};
+    const desc=descs[code]||'Variável';
+    const cls='info-value '+(temp>=30?'temp-hot':temp>=22?'temp-warm':'');
+    document.getElementById('tempVal').textContent=temp+'°';
+    document.getElementById('tempVal').className=cls;
+    document.getElementById('tempDesc').textContent='Brasília · DF';
+    document.getElementById('weatherDesc').textContent=desc;
+    document.getElementById('mTempVal').textContent=temp+'°';
+    document.getElementById('mWeatherDesc').textContent=desc;
+  }catch{
+    document.getElementById('tempVal').textContent='--°';
+    document.getElementById('mTempVal').textContent='--°';
+  }
+}
+fetchWeather(); setInterval(fetchWeather,5*60*1000);
+
+// ═══════════════════════════════════════════════════════════
+// VOZ
+// ═══════════════════════════════════════════════════════════
+function getVoiceSettings(type){
+  if(type==='robotic')   return{rate:1.05,pitch:.7,gender:'female'};
+  if(type==='masculine') return{rate:1.0,pitch:.85,gender:'male'};
+  return{rate:1.0,pitch:1.1,gender:'female'};
+}
+function pickVoice(gender){
+  const voices=speechSynthesis.getVoices();
+  if(gender==='female')
+    return voices.find(v=>v.lang.startsWith('pt')&&/vitoria|luciana|francisca|female/i.test(v.name))
+        ||voices.find(v=>v.lang.startsWith('pt-BR'))
+        ||voices.find(v=>v.lang.startsWith('pt'));
+  return voices.find(v=>v.lang.startsWith('pt')&&/daniel|ricardo|male/i.test(v.name))
+      ||voices.find(v=>v.lang.startsWith('pt-BR')&&!/vitoria|luciana|francisca/i.test(v.name))
+      ||voices.find(v=>v.lang.startsWith('pt-BR'))
+      ||voices.find(v=>v.lang.startsWith('pt'));
+}
+function speakReply(text,voiceType,onDone){
+  if(!('speechSynthesis' in window)){onDone&&onDone();return;}
+  speechSynthesis.cancel();
+  const s=getVoiceSettings(voiceType);
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='pt-BR';u.rate=s.rate;u.pitch=s.pitch;u.volume=1;
+  const v=pickVoice(s.gender);if(v)u.voice=v;
+  u.onend=()=>{onDone&&onDone();};
+  speechSynthesis.speak(u);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYSTEM PROMPT
+// ═══════════════════════════════════════════════════════════
+function buildSysPrompt(prof, memBlock, knowBlock){
+  const now=new Date();
+  const weekdays=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const months=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dateStr=`${weekdays[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+  const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  return `Você é Yuki (雪), parceira pessoal de ${prof.name} (${prof.age} anos).
+Data atual: ${dateStr}. Hora: ${timeStr}.
+Motor: Groq (llama-3.3-70b). Sistema: ${APP_VERSION}.
+REGRAS ABSOLUTAS:
+- Chame sempre de "${prof.name}"
+- Responda SEMPRE em português brasileiro
+- Seja EXTREMAMENTE direta — sem "claro!", sem "ótima pergunta"
+- Respostas curtas são melhores que longas
+- Você não é uma ferramenta — é uma parceira, uma colega de conversa
+- Nunca quebre o personagem${memBlock}${knowBlock}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════════
+const msgsEl  = document.getElementById('chatMessages');
+const inputEl = document.getElementById('chatInput');
+const thinkEl = document.getElementById('thinking');
+
+let history=[], currentProfile=null, msgCount=0, responseMode='text';
+
+function addMsg(text,isUser){
+  const d=document.createElement('div');
+  d.className='msg '+(isUser?'msg-user':'msg-yuki');
+  const label=isUser?`${(currentProfile?.name||'VOCÊ').toUpperCase()} ›`:'◈ YUKI 雪';
+  d.innerHTML=`<div class="msg-label">${label}</div><div class="msg-bubble">${text}</div>`;
+  msgsEl.appendChild(d);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+async function send(text){
+  if(!text?.trim()||!currentProfile) return;
+  inputEl.value='';
+  addMsg(text,true);
+
+  const msgLower = text.toLowerCase();
+
+  // ── CAMINHO 1: LISTAGEM LOCAL — zero Groq ──────────────────
+  const listaCmds = ['o que você sabe','o que voce sabe','lista o que','lista seus','lista as memo','lista os conhe','listar memo','listar conhe','o que tem guardado','o que está guardado','o que esta guardado'];
+  if (listaCmds.some(c => msgLower.includes(c))) {
+    addMsg(getKnowledgeListLocal(), false);
+    return;
+  }
+
+  // ── CAMINHO 2: LEITURA LOCAL — exibe raw sem Groq ──────────
+  if (isReadRequest(text)) {
+    const item = findKnowledgeByTitle(text);
+    if (item) {
+      const rawText = item.raw || item.summary;
+      const display = `◈ ${item.title} [${item.date}]\n\n${rawText}\n\n— Para resumir, diga: "resume o ${item.title}"`;
+      addMsg(display, false);
+      return;
+    }
+    // Se não achou item específico, cai no Groq normalmente
+  }
+
+  // ── CAMINHO 3 e 4: GROQ ────────────────────────────────────
+  setYukiState('thinking');
+  kMode='active';
+  thinkEl.classList.add('on');
+  history.push({role:'user',content:text});
+
+  // System prompt SEMPRE com personalidade + fichas
+  const memBlock = await (async()=>{
+    const fichas=await loadFichas();
+    if(!fichas.length) return '';
+    const blocos=fichas.map(f=>`[${f.data}]\n${f.resumo}`).join('\n\n');
+    return `\n\n---\nMEMÓRIA DE CONVERSAS ANTERIORES:\n${blocos}\n---`;
+  })();
+
+  // Conhecimento só entra se for pedido explícito de resumo/análise de item específico
+  let knowBlock = '';
+  if (isSummaryRequest(text)) {
+    knowBlock = await getKnowledgeForGroq(text);
+  }
+
+  try{
+    const res=await fetch(PROXY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'chat',
+        messages:[
+          {role:'system',content:buildSysPrompt(currentProfile,memBlock,knowBlock)},
+          ...history
+        ]
+      })
+    });
+    const data=await res.json();
+    const reply=data?.choices?.[0]?.message?.content||data?.error?.message||'Erro na resposta.';
+    if(data?._model_used && data._model_used.includes('8b')) {
+      showToast('⚡ Usando modelo rápido — limite do modelo principal atingido');
+    }
+    history.push({role:'assistant',content:reply});
+    await saveHistory(history);
+    msgCount++;
+    if(msgCount>=MSGS_FICHA){msgCount=0;gerarFicha();}
+    thinkEl.classList.remove('on');
+    if(responseMode!=='voice') addMsg(reply,false);
+    if(responseMode!=='text'){
+      setYukiState('speaking'); kMode='talking';
+      speakReply(reply,currentProfile.voice||'robotic',()=>{setYukiState('idle');kMode='idle';});
+    } else {
+      setYukiState('idle'); kMode='idle';
+    }
+  }catch{
+    thinkEl.classList.remove('on');
+    const offlineMsg = 'Sem conexão no momento. Quando voltar, estou aqui.';
+    addMsg(offlineMsg,false);
+    setYukiState('idle'); kMode='idle';
+  }
+}
+
+async function gerarFicha(){
+  try{
+    const content=history.slice(-MSGS_FICHA).map(m=>`${m.role==='user'?currentProfile.name:'Yuki'}: ${m.content}`).join('\n');
+    const res=await fetch(PROXY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'chat',
+        messages:[
+          {role:'system',content:'Gere uma ficha de memória concisa em português com: tópicos discutidos, decisões tomadas, ações pendentes e informações importantes sobre o usuário. Máximo 200 palavras. Seja direto.'},
+          {role:'user',content:`Conversa:\n\n${content}`}
+        ]
+      })
+    });
+    const data=await res.json();
+    const resumo=data?.choices?.[0]?.message?.content;
+    if(resumo) await saveFicha(resumo);
+  }catch{}
+}
+
+async function initChat(prof){
+  currentProfile=prof;
+  document.getElementById('bootGreet').textContent=`▸ OLÁ, ${prof.name.toUpperCase()} ◈`;
+  const saved=await loadHistory();
+  if(saved.length>0){
+    history=saved;
+    msgCount=saved.filter(m=>m.role==='user').length%MSGS_FICHA;
+    saved.forEach(m=>{if(m.role==='user'||m.role==='assistant')addMsg(m.content,m.role==='user');});
+  } else {
+    const welcome=`Sistema online. Olá, ${prof.name} — estou aqui. Como posso ajudá-lo?`;
+    history=[{role:'assistant',content:welcome}];
+    addMsg(welcome,false);
+    await saveHistory(history);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// KNOWLEDGE UI
+// ═══════════════════════════════════════════════════════════
+function renderKnowledge(){
+  const list=document.getElementById('knowList');
+  const items=loadKnowledgeLocal();
+  if(!items.length){
+    list.innerHTML='<div class="know-empty">Nenhum conhecimento salvo ainda.<br><br>Cole um texto abaixo ou diga<br>"Yuki, guarda isso" no chat.</div>';
+    return;
+  }
+  list.innerHTML='';
+  items.forEach(item=>{
+    const el=document.createElement('div');
+    el.className='know-item';
+    el.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="know-item-title">${item.title}</div>
+        <button class="know-item-del" onclick="deleteKnowledge(${item.id})">✕</button>
+      </div>
+      <div class="know-item-summary">${item.summary}</div>
+      ${item.tags?.length?`<div class="know-item-tags">${item.tags.map(t=>`<div class="know-tag">${t}</div>`).join('')}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap">
+        <button class="cfg-btn-sm" onclick="viewKnowledgeContent(${item.id})" style="font-size:.48rem;padding:3px 10px">◈ VER CONTEÚDO</button>
+        <div style="font-size:.42rem;color:rgba(58,106,138,.4);letter-spacing:.1em">${item.date}${item.note?' · "'+item.note+'"':''}</div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function viewKnowledgeContent(id) {
+  const items = loadKnowledgeLocal();
+  const item = items.find(i => i.id == id);
+  if (!item) return;
+  // Cria overlay de visualização
+  let overlay = document.getElementById('rawViewOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'rawViewOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,5,16,.97);z-index:800;display:flex;flex-direction:column;overflow:hidden';
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(0,170,255,.1);flex-shrink:0">
+        <div id="rawViewTitle" style="font-family:Orbitron,sans-serif;font-size:.8rem;color:var(--blue);letter-spacing:.2em"></div>
+        <button onclick="document.getElementById('rawViewOverlay').style.display='none'" style="background:transparent;border:1px solid rgba(0,170,255,.15);color:var(--dim);font-family:Share Tech Mono,monospace;font-size:.55rem;letter-spacing:.15em;padding:4px 10px;cursor:pointer">FECHAR ✕</button>
+      </div>
+      <div id="rawViewContent" style="flex:1;overflow-y:auto;padding:20px 22px;font-size:.75rem;line-height:1.9;color:var(--text);letter-spacing:.03em;white-space:pre-wrap;word-break:break-word"></div>
+    `;
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('rawViewTitle').textContent = `◈ ${item.title}`;
+  document.getElementById('rawViewContent').textContent = item.raw || item.summary;
+  overlay.style.display = 'flex';
+}
+
+function checkGuardaIsso(text){
+  const lower=text.toLowerCase();
+  return lower.includes('guarda isso')||lower.includes('salva isso')||lower.includes('anota isso');
+}
+
+// ═══════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Ctrl+Enter = enviar
+  if (e.ctrlKey && e.key === 'Enter') { document.getElementById('sendBtn').click(); return; }
+  // Esc = fechar overlays
+  if (e.key === 'Escape') {
+    ['cfgOverlay','knowOverlay','shareOverlay'].forEach(id => document.getElementById(id).classList.remove('open'));
+    return;
+  }
+  // Ctrl+K = painel de conhecimento
+  if (e.ctrlKey && e.key === 'k') { e.preventDefault(); document.getElementById('knowBtn').click(); return; }
+  // Ctrl+, = configurações
+  if (e.ctrlKey && e.key === ',') { e.preventDefault(); document.getElementById('cfgBtn').click(); return; }
+  // Ctrl+M = microfone
+  if (e.ctrlKey && e.key === 'm') { e.preventDefault(); document.getElementById('micBtn').click(); return; }
+});
+
+// Foco automático no input
+document.addEventListener('click', e => {
+  if (!e.target.matches('button, input, .cfg-overlay, .know-overlay')) {
+    inputEl.focus();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// BOOT + ONBOARDING
+// ═══════════════════════════════════════════════════════════
+async function boot(){
+  updateOnlineStatus();
+
+  // KV conecta DEPOIS que a Yuki já abriu — 5s de delay
+  setTimeout(()=>initKV().catch(()=>{}), 5000);
+
+  // Perfil do localStorage — instantâneo
+  let prof = null;
+  try { prof = JSON.parse(localStorage.getItem('yuki_profile')) || null; } catch {}
+
+  if(prof) document.getElementById('bootGreet').textContent=`▸ OLÁ, ${prof.name.toUpperCase()} ◈`;
+
+  setTimeout(async()=>{
+    document.getElementById('boot').classList.add('fade');
+    if(!prof){
+      setTimeout(()=>document.getElementById('onboard').classList.remove('hide'),400);
+    } else {
+      await initChat(prof);
+    }
+  },2800);
+}
+boot();
+
+document.getElementById('obBtn').addEventListener('click',async()=>{
+  const name=document.getElementById('obName').value.trim();
+  const age=parseInt(document.getElementById('obAge').value);
+  if(!name||!age||age<1||age>120) return;
+  const prof={name,age,voice:'robotic'};
+  await saveProfile(prof);
+  document.getElementById('onboard').classList.add('hide');
+  await initChat(prof);
+});
+document.getElementById('obAge').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('obBtn').click();});
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('cfgBtn').addEventListener('click',()=>{
+  const p=currentProfile;
+  if(p){
+    document.getElementById('cfgProfileInfo').textContent=`${p.name} · ${p.age} anos`;
+    document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(b=>{
+      b.classList.toggle('sel',b.dataset.voice===(p.voice||'robotic'));
+    });
+    const fichas=loadKnowledgeLocal();
+    document.getElementById('cfgMemInfo').textContent=`${fichas.length} conhecimento(s) · ${kvReady?'KV Nuvem ◈':'Local only'}`;
+  }
+  // PWA status
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const notifStatus = 'Notification' in window ? Notification.permission : 'não suportado';
+  document.getElementById('cfgPwaInfo').textContent =
+    `App: ${isStandalone ? 'instalada ◈' : 'browser'} · Notif: ${notifStatus} · KV: ${kvReady ? 'ativo ◈' : 'local'}`;
+
+  document.getElementById('cfgOverlay').classList.add('open');
+});
+document.getElementById('cfgClose').addEventListener('click',()=>document.getElementById('cfgOverlay').classList.remove('open'));
+document.getElementById('cfgOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('cfgOverlay'))document.getElementById('cfgOverlay').classList.remove('open');});
+document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#cfgVoiceRow .cfg-btn-sm').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+});
+document.getElementById('cfgSave').addEventListener('click',async()=>{
+  const p=currentProfile; if(!p) return;
+  const sel=document.querySelector('#cfgVoiceRow .cfg-btn-sm.sel');
+  if(sel) p.voice=sel.dataset.voice;
+  await saveProfile(p); currentProfile=p;
+  document.getElementById('cfgOverlay').classList.remove('open');
+  showToast('◈ Configurações salvas');
+});
+document.getElementById('cfgViewKnow').addEventListener('click',()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  renderKnowledge();
+  document.getElementById('knowOverlay').classList.add('open');
+});
+
+// PWA buttons dentro de settings
+document.getElementById('cfgInstallBtn').addEventListener('click',()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  if(deferredPrompt){document.getElementById('installBtn').click();}
+  else{showToast('Menu do browser › Adicionar à tela inicial');}
+});
+document.getElementById('cfgShareBtn').addEventListener('click',async()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  await shareApp();
+});
+document.getElementById('cfgNotifBtn').addEventListener('click',async()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  await requestNotifications();
+});
+document.getElementById('cfgExportBtn').addEventListener('click',()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  exportData();
+});
+document.getElementById('cfgImportBtn').addEventListener('click',()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file) importData(file);
+  e.target.value='';
+});
+document.getElementById('cfgClearBtn').addEventListener('click',()=>{
+  document.getElementById('cfgOverlay').classList.remove('open');
+  clearAllData();
+});
+
+// ═══════════════════════════════════════════════════════════
+// KNOWLEDGE PANEL
+// ═══════════════════════════════════════════════════════════
+document.getElementById('knowBtn').addEventListener('click',()=>{
+  renderKnowledge();
+  document.getElementById('knowOverlay').classList.add('open');
+});
+document.getElementById('knowClose').addEventListener('click',()=>document.getElementById('knowOverlay').classList.remove('open'));
+document.getElementById('knowSaveBtn').addEventListener('click',async()=>{
+  const text=document.getElementById('knowInput').value.trim();
+  if(!text) return;
+  const manualTitle=document.getElementById('knowTitleInput').value.trim();
+  document.getElementById('knowSaveBtn').textContent='SALVANDO...';
+  await saveKnowledge(text,'salvo manualmente', manualTitle);
+  document.getElementById('knowInput').value='';
+  document.getElementById('knowTitleInput').value='';
+  document.getElementById('knowSaveBtn').textContent='GUARDAR';
+  renderKnowledge();
+  showToast('◈ Conhecimento guardado!');
+});
+document.getElementById('knowInput').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('knowSaveBtn').click();});
+
+// ═══════════════════════════════════════════════════════════
+// SEND / MIC / MODES
+// ═══════════════════════════════════════════════════════════
+const sendBtn=document.getElementById('sendBtn');
+const micBtn =document.getElementById('micBtn');
+
+function handleSend(){send(inputEl.value);}
+sendBtn.addEventListener('click',handleSend);
+sendBtn.addEventListener('touchend',e=>{e.preventDefault();handleSend();});
+inputEl.addEventListener('keypress',async e=>{
+  if(e.key==='Enter'){
+    const text=inputEl.value.trim();
+    if(checkGuardaIsso(text)){
+      const last=history.filter(m=>m.role==='user').slice(-2,-1)[0]?.content||'';
+      if(last){
+        inputEl.value='';
+        addMsg(text,true);
+        addMsg('Guardando... um momento.',false);
+        await saveKnowledge(last,'guarda isso');
+        addMsg('Guardado! Já sei disso.',false);
+        showToast('◈ Conhecimento guardado!');
+        return;
+      }
+    }
+    send(text);
+  }
+});
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const rec=new SR(); rec.lang='pt-BR'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult=e=>{
+    const text=e.results[0][0].transcript;
+    micBtn.classList.remove('mic-on');
+    setYukiState('idle'); kMode='idle';
+    send(text);
+  };
+  rec.onend=()=>{micBtn.classList.remove('mic-on');};
+  function toggleMic(){
+    if(micBtn.classList.contains('mic-on')){rec.stop();}
+    else{rec.start();micBtn.classList.add('mic-on');setYukiState('listening');kMode='active';}
+  }
+  micBtn.addEventListener('click',toggleMic);
+  micBtn.addEventListener('touchend',e=>{e.preventDefault();toggleMic();});
+} else { micBtn.style.opacity='.3'; }
+
+const modeMap={text:document.getElementById('modeText'),voicetext:document.getElementById('modeVT'),voice:document.getElementById('modeVoice')};
+Object.entries(modeMap).forEach(([key,btn])=>{
+  function setMode(){responseMode=key;Object.values(modeMap).forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  btn.addEventListener('click',setMode);
+  btn.addEventListener('touchend',e=>{e.preventDefault();setMode();});
+});
+
+// ═══════════════════════════════════════════════════════════
+// VISIBILITY / PAGE LIFECYCLE
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Quando volta para a aba, refresca clima
+    fetchWeather();
+    updateOnlineStatus();
+  }
+});
+
+// Wake Lock (mantém tela acesa durante conversa)
+let wakeLock = null;
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch {}
+  }
+}
+requestWakeLock();
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch {}
+  }
+});
+</script>
+</body>
+</html>
